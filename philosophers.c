@@ -58,27 +58,57 @@ static void	start_simulation(t_philo *philos)
 void	*routine(t_philo *philosopher)
 {
 	if (philosopher->rules->number_of_philosophers == 1)
-		return (one_philo());
+	{
+		one_philo();
+		return (NULL);
+	}
 	gettimeofday(&philosopher->last_meal, NULL);
 	while (1)
 	{
-		if (ate_enough(philosopher) || philosopher->rules->someone_died
-			|| is_dead(philosopher))
+		if (should_stop(philosopher))
+		{
 			return (NULL);
+		}
 		think();
 		take_forks(philosopher);
-		eat(philosopher); // also writes the time of meal when starts (last_meal)
+		eat(philosopher);
 		place_forks(philosopher);
+		if (should_stop(philosopher))
+		{
+			return (NULL);
+		}
 		philo_sleep(philosopher);
 	}
 	return (NULL);
 }
 
+bool	should_stop(t_philo *philosopher)
+{
+	return (ate_enough(philosopher) || philosopher->rules->someone_died
+		|| is_dead(philosopher));
+}
+
+bool	ate_enough(t_philo *philosopher)
+{
+	return (philosopher->meals_eaten >= philosopher->rules->number_of_times_each_philosopher_must_eat);
+}
+
 void	eat(t_philo *philosopher)
 {
-	gettimeofday(&philosopher->last_meal, NULL);
-	printf("%i is eating\n", philosopher->id);
-	usleep(philosopher->rules->time_to_eat);
+	long long	now;
+
+	now = get_time_ms();
+	printf("%lld %i is eating\n", now, philosopher->id);
+	philosopher->last_meal = now;
+	usleep(philosopher->rules->time_to_eat * 1000);
+}
+
+long long	get_time_ms(void)
+{
+	struct timeval	tv;
+
+	gettimeofday(&tv, NULL);
+	return (tv.tv_sec * 1000LL + tv.tv_usec / 1000);
 }
 
 void	place_forks(t_philo *philosopher)
@@ -111,11 +141,10 @@ void	take_forks(t_philo *philosopher)
 // returns true if is dead, but also prints the log and updates someone_died
 int	is_dead(t_philo *philosopher)
 {
-	struct timeval	now;
+	long long	now;
 
-	gettimeofday(&now, NULL);
-	if (now.tv_usec
-		- philosopher->last_meal.tv_usec > philosopher->rules->time_to_die)
+	now = get_time_ms();
+	if (now - philosopher->last_meal > philosopher->rules->time_to_die)
 	{
 		printf("%i died\n", philosopher->id);
 		philosopher->rules->someone_died = true;

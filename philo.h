@@ -26,9 +26,9 @@ typedef struct		s_fork;
 typedef struct s_rules
 {
 	int				number_of_philosophers;
-	int				time_to_die;
-	int				time_to_eat;
-	int				time_to_sleep;
+	long long		time_to_die;
+	long long		time_to_eat;
+	long long		time_to_sleep;
 	int				number_of_times_each_philosopher_must_eat;
 	bool			someone_died;
 	long long		start_time;
@@ -38,7 +38,7 @@ typedef struct s_philo
 {
 	int				id;
 	pthread_t		thread;
-	struct timeval	last_meal;
+	long long		last_meal;
 	int				meals_eaten;
 	t_rules			*rules;
 	struct s_fork	*left_fork;
