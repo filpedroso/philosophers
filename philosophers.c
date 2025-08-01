@@ -24,6 +24,8 @@ int	main(int argc, char **argv)
 	check_args(argc, argv); // exits cleanly if not right args
 	rules = parse_args(argv);
 	philos = make_philos(rules.number_of_philosophers);
+	if (!philos)
+		return (1);
 	start_simulation(philos);
 	terminate_simulation(philos);
 	return (0);
@@ -60,36 +62,66 @@ void	*routine(t_philo *philosopher)
 	gettimeofday(&philosopher->last_meal, NULL);
 	while (1)
 	{
-		think();
 		if (ate_enough(philosopher) || philosopher->rules->someone_died
 			|| is_dead(philosopher))
 			return (NULL);
-		if (philosopher->id % 2 == 0)
-		{
-			pthread_mutex_lock(philosopher->right_fork->mutex);
-			pthread_mutex_lock(philosopher->left_fork->mutex);
-		}
-		else
-		{
-			pthread_mutex_lock(philosopher->left_fork->mutex);
-			pthread_mutex_lock(philosopher->right_fork->mutex);
-		}
-		eat(philosopher); // also logs the time of meal when starts (last_meal)
-		pthread_mutex_unlock(philosopher->right_fork->mutex);
-		pthread_mutex_unlock(philosopher->left_fork->mutex);
-		philo_sleep(philosopher->rules->time_to_sleep);
+		think();
+		take_forks(philosopher);
+		eat(philosopher); // also writes the time of meal when starts (last_meal)
+		place_forks(philosopher);
+		philo_sleep(philosopher);
 	}
 	return (NULL);
 }
 
-
-void	*life_monitor(philos)
+void	eat(t_philo *philosopher)
 {
-	/*
-		* Prints message when someone is dead
-		* Sets termination flag to true accordingly
-		* Terminates
-		*/
+	gettimeofday(&philosopher->last_meal, NULL);
+	printf("%i is eating\n", philosopher->id);
+	usleep(philosopher->rules->time_to_eat);
+}
+
+void	place_forks(t_philo *philosopher)
+{
+	pthread_mutex_unlock(philosopher->right_fork->mutex);
+	pthread_mutex_unlock(philosopher->left_fork->mutex);
+}
+
+void	take_forks(t_philo *philosopher)
+{
+	int	philosopher_id;
+
+	philosopher_id = philosopher->id;
+	if (philosopher_id % 2 == 0)
+	{
+		pthread_mutex_lock(philosopher->right_fork->mutex);
+		printf("%i has taken a fork\n", philosopher_id);
+		pthread_mutex_lock(philosopher->left_fork->mutex);
+		printf("%i has taken a fork\n", philosopher_id);
+	}
+	else
+	{
+		pthread_mutex_lock(philosopher->left_fork->mutex);
+		printf("%i has taken a fork\n", philosopher_id);
+		pthread_mutex_lock(philosopher->right_fork->mutex);
+		printf("%i has taken a fork\n", philosopher_id);
+	}
+}
+
+// returns true if is dead, but also prints the log and updates someone_died
+int	is_dead(t_philo *philosopher)
+{
+	struct timeval	now;
+
+	gettimeofday(&now, NULL);
+	if (now.tv_usec
+		- philosopher->last_meal.tv_usec > philosopher->rules->time_to_die)
+	{
+		printf("%i died\n", philosopher->id);
+		philosopher->rules->someone_died = true;
+		return (true);
+	}
+	return (false);
 }
 
 void	check_args(int argc, char **argv)
@@ -108,7 +140,7 @@ void	parse_args(char **args)
 		*/
 }
 
-void	make_philos(amount)
+t_philo	*make_philos(amount)
 {
 	/*
 		* Makes philos and forks, the same amount each
@@ -124,3 +156,19 @@ void	terminate_simulation(t_philo *philos)
 		* Destroy mutexes and free structs
 		*/
 }
+
+/* UNUSED - OBSOLETE
+void	*life_monitor(t_philo *philos)
+{
+	t_philo	*head;
+
+	head = philos;
+	while (1)
+	{
+	}
+	/*
+		* Prints message when someone is dead
+		* Sets termination flag to true accordingly
+		* Terminates
+}
+*/

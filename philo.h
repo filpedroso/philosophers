@@ -14,14 +14,14 @@
 # define PHILO_H
 
 # include <pthread.h>
+# include <stdbool.h>
 # include <stdio.h>
 # include <stdlib.h>
-# include <sys/time.h>
 # include <string.h>
-# include <stdbool.h>
+# include <sys/time.h>
 # include <unistd.h>
 
-typedef struct s_fork;
+typedef struct		s_fork;
 
 typedef struct s_rules
 {
@@ -30,22 +30,19 @@ typedef struct s_rules
 	int				time_to_eat;
 	int				time_to_sleep;
 	int				number_of_times_each_philosopher_must_eat;
-	int				someone_died;
+	bool			someone_died;
 	long long		start_time;
 }					t_rules;
 
 typedef struct s_philo
 {
 	int				id;
-	bool			is_dead;
 	pthread_t		thread;
 	struct timeval	last_meal;
 	int				meals_eaten;
 	t_rules			*rules;
 	struct s_fork	*left_fork;
 	struct s_fork	*right_fork;
-	pthread_mutex_t	*death_mutex;
-	pthread_mutex_t	*state_mutex;
 }					t_philo;
 
 typedef struct s_fork
@@ -56,12 +53,11 @@ typedef struct s_fork
 	t_philo			*right_philo;
 }					t_fork;
 
-
-void	*routine(t_philo *philosopher);
-void	*life_monitor(t_philo * philos);
-void	check_args(int argc, char **argv);
-void	make_philos(int amount);
-void	terminate_simulation(t_philo *philos);
-void	parse_args(char **args);
+void				*routine(t_philo *philosopher);
+void				*life_monitor(t_philo *philos);
+void				check_args(int argc, char **argv);
+void				make_philos(int amount);
+void				terminate_simulation(t_philo *philos);
+void				parse_args(char **args);
 
 #endif
