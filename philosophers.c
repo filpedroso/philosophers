@@ -25,12 +25,69 @@ int	main(int argc, char **argv)
 	status = 0;
 	check_args(argc, argv); // exits cleanly if not right args
 	rules = parse_args(argv);
-	philos = make_philos(rules.number_of_philosophers);
-	if (!philos)
+	if (pthread_mutex_init(rules.death_mutex, NULL) != 0)
 		return (1);
+	philos = prep_table(rules.number_of_philosophers, &rules);
+	if (!philos)
+	{
+		terminate_simulation(philos);
+		return (1);
+	}
 	status = start_simulation(philos);
 	terminate_simulation(philos);
 	return (status);
+}
+
+t_philo	*prep_table(int amount, t_rules *rules)
+{
+	t_philo	*new_philo;
+	t_philo	*philos;
+	int		id;
+
+	if (amount <= 0 || !philos)
+		return (NULL);
+	philos = NULL;
+	id = 0;
+	while (id < amount)
+	{
+		new_philo = new_head_and_fork(id, rules);
+		if (!new_philo)
+			return (NULL);
+		cdll_add(&philos, new_philo);
+		id++;
+	}
+	return (philos);
+}
+
+t_philo	*new_head_and_fork(int id, t_rules *rules)
+{
+	t_philo		*philosopher;
+
+	philosopher = (t_philo *)malloc(sizeof(t_philo));
+	if (!philosopher)
+		return (NULL);
+	if (pthread_mutex_init(philosopher->right_fork->mutex, NULL) != 0)
+	{
+		free(philosopher);
+		return (NULL);
+	}
+	philosopher->right_fork->left_philo = philosopher;
+	philosopher->right_fork->right_philo = NULL;
+	philosopher->left_fork = NULL;
+	return (philosopher);
+}
+
+t_rules	parse_args(char **argv)
+{
+	t_rules	rules;
+
+	rules.number_of_philosophers = ft_atoi(argv[1]);
+	rules.time_to_die = ft_atoi(argv[2]);
+	rules.time_to_eat = ft_atoi(argv[3]);
+	rules.time_to_sleep = ft_atoi(argv[4]);
+	rules.number_of_times_each_philosopher_must_eat = ft_atoi(argv[5]);
+	rules.someone_died = false;
+	rules.start_time = 0;
 }
 
 static int	start_simulation(t_philo *philos)
@@ -44,7 +101,7 @@ static int	start_simulation(t_philo *philos)
 	while (n_philos--)
 	{
 		if (pthread_create(&head->thread, NULL, routine, (void *)head) != 0)
-			return (ft_putstr_fd("pthread create error\n", 2));
+			return (ft_putstr_error("pthread create error\n"));
 		head = head->right_fork->right_philo;
 	}
 	head = philos;
@@ -52,25 +109,27 @@ static int	start_simulation(t_philo *philos)
 	while (n_philos--)
 	{
 		if (pthread_join(head->thread, NULL) != 0)
-			return (ft_putstr_fd("join error\n", 2));
+			return (ft_putstr_error("join error\n"));
 		head = head->right_fork->right_philo;
 	}
 	return (0);
 }
 
-int	ft_putstr_fd(char *s, int fd)
+int	ft_putstr_error(char *s)
 {
 	size_t	buffer;
+	char	*ptr;
 
 	if (!s)
 		return (1);
+	ptr = s;
 	buffer = 0;
 	while (*s)
 	{
 		buffer++;
 		s++;
 	}
-	write(fd, s, buffer);
+	write(2, ptr, buffer);
 	return (1);
 }
 
@@ -128,7 +187,8 @@ void	one_philo(t_philo *philosopher)
 
 bool	should_stop(t_philo *philosopher)
 {
-	return (ate_enough(philosopher) || philosopher->rules->someone_died
+	return (ate_enough(philosopher)
+		|| philosopher->rules->someone_died
 		|| is_dead(philosopher));
 }
 
@@ -147,6 +207,7 @@ void	eat(t_philo *philosopher)
 	printf("%lld %i is eating\n", now - start, philosopher->id);
 	philosopher->last_meal = now;
 	usleep(philosopher->rules->time_to_eat * 1000);
+	philosopher->meals_eaten++;
 }
 
 long long	time_now_ms(void)
@@ -240,15 +301,6 @@ t_rules	parse_args(char **args)
 		*/
 }
 
-t_philo	*make_philos(amount)
-{
-	/*
-		* Makes philos and forks, the same amount each
-		* Circular doubly linked list, where
-		* each philo is a thread and has forks each side
-		* Each fork is a mutex and also a node in the DLL
-		*/
-}
 
 void	terminate_simulation(t_philo *philos)
 {
