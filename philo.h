@@ -31,6 +31,7 @@ typedef struct s_rules
 	long long		time_to_sleep;
 	int				number_of_times_each_philosopher_must_eat;
 	bool			someone_died;
+	pthread_mutex_t	*death_mutex;
 	long long		start_time;
 }					t_rules;
 
