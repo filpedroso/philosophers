@@ -32,6 +32,7 @@ typedef struct s_rules
 	int				number_of_times_each_philosopher_must_eat;
 	bool			someone_died;
 	pthread_mutex_t	*death_mutex;
+	pthread_t		monitor_thread;
 	long long		start_time;
 }					t_rules;
 

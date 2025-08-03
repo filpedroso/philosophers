@@ -112,7 +112,22 @@ static int	start_simulation(t_philo *philos)
 			return (ft_putstr_error("join error\n"));
 		head = head->right_fork->right_philo;
 	}
-	return (0);
+	if (pthread_create(&philos->rules->monitor_thread, NULL, watchdog, (void *)philos) != 0)
+		return (ft_putstr_error("pthread create error\n"));
+	return (pthread_detach(philos->rules->monitor_thread));
+}
+
+void	*watchdog(t_philo *philos)
+{
+	t_philo		*philosopher;
+
+	philosopher = philos;
+	while (is_dead(philosopher) == false)
+	{
+		philosopher = philosopher->right_fork->right_philo;
+		usleep(50);
+	}
+	return (NULL);
 }
 
 int	ft_putstr_error(char *s)
@@ -187,14 +202,18 @@ void	one_philo(t_philo *philosopher)
 
 bool	should_stop(t_philo *philosopher)
 {
-	return (ate_enough(philosopher)
-		|| philosopher->rules->someone_died
-		|| is_dead(philosopher));
+	bool	should_stop;
+
+	pthread_mutex_lock(philosopher->rules->death_mutex);
+	should_stop = (ate_enough(philosopher) || philosopher->rules->someone_died);
+	pthread_mutex_unlock(philosopher->rules->death_mutex);
+
 }
 
 bool	ate_enough(t_philo *philosopher)
 {
-	return (philosopher->meals_eaten >= philosopher->rules->number_of_times_each_philosopher_must_eat);
+	return (philosopher->meals_eaten
+		>= philosopher->rules->number_of_times_each_philosopher_must_eat);
 }
 
 void	eat(t_philo *philosopher)
@@ -264,7 +283,7 @@ void	take_forks(t_philo *philosopher)
 	}
 }
 
-int	is_dead(t_philo *philosopher)
+bool	is_dead(t_philo *philosopher)
 {
 	long long	now;
 	long long	start;
