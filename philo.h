@@ -21,17 +21,19 @@
 # include <sys/time.h>
 # include <unistd.h>
 
+# define NO_ARG -2
+
 typedef struct		s_fork;
 
 typedef struct s_rules
 {
 	int				number_of_philosophers;
-	long long		time_to_die;
-	long long		time_to_eat;
-	long long		time_to_sleep;
+	int				time_to_die;
+	int				time_to_eat;
+	int				time_to_sleep;
 	int				number_of_times_each_philosopher_must_eat;
 	bool			someone_died;
-	pthread_mutex_t	*death_mutex;
+	pthread_mutex_t	death_mutex;
 	pthread_t		monitor_thread;
 	long long		start_time;
 }					t_rules;
@@ -40,6 +42,7 @@ typedef struct s_philo
 {
 	int				id;
 	pthread_t		thread;
+	pthread_mutex_t	eat_mutex;
 	long long		last_meal;
 	int				meals_eaten;
 	t_rules			*rules;
@@ -50,7 +53,7 @@ typedef struct s_philo
 typedef struct s_fork
 {
 	int				id;
-	pthread_mutex_t	*mutex;
+	pthread_mutex_t	mutex;
 	t_philo			*left_philo;
 	t_philo			*right_philo;
 }					t_fork;
@@ -60,6 +63,6 @@ void				*life_monitor(t_philo *philos);
 void				check_args(int argc, char **argv);
 void				make_philos(int amount);
 void				terminate_simulation(t_philo *philos);
-void				parse_args(char **args);
+bool				parse_args(int argc, char **argv, t_rules *rules);
 
 #endif
