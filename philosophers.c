@@ -25,10 +25,10 @@ int	main(int argc, char **argv)
 		return (1);
 	if (pthread_mutex_init(&rules.death_mutex, NULL) != 0)
 		return (1);
+	debug_print_rules(rules);
 	philos = prep_table(rules.number_of_philosophers, &rules);
 	if (!philos)
 		return (1);
-	debug_print_rules(rules);
 	debug_print_rules(*philos->rules);
 	status = 0;
 	status = start_simulation(philos);
@@ -93,14 +93,16 @@ t_philo	*prep_table(int amount, t_rules *rules)
 	if (amount <= 0)
 		return (NULL);
 	id = 0;
+	philos = NULL;
 	while (++id <= amount)
 	{
-		new_philo = new_head_and_fork(id, rules);
+		new_philo = new_philo_fork_pair(id);
 		if (!new_philo)
 		{
 			terminate_simulation(philos);
 			return (NULL);
 		}
+		new_philo->rules = rules;
 		cdll_add(&philos, new_philo);
 	}
 	return (philos);
@@ -124,7 +126,7 @@ void	cdll_add(t_philo **ptr, t_philo *new)
 	philos->left_fork = new->right_fork;
 }
 
-t_philo	*new_head_and_fork(int id, t_rules *rules)
+t_philo	*new_philo_fork_pair(int id)
 {
 	t_philo	*philosopher;
 
@@ -136,7 +138,8 @@ t_philo	*new_head_and_fork(int id, t_rules *rules)
 	if (!philosopher->right_fork)
 		return (NULL);
 	memset(philosopher->right_fork, 0, sizeof(t_fork));
-	if (pthread_mutex_init(&philosopher->right_fork->mutex, NULL) != 0)
+	if (pthread_mutex_init(&philosopher->right_fork->mutex, NULL) != 0
+		|| pthread_mutex_init(&philosopher->eat_mutex, NULL) != 0)
 	{
 		free(philosopher);
 		return (NULL);
@@ -147,33 +150,66 @@ t_philo	*new_head_and_fork(int id, t_rules *rules)
 	return (philosopher);
 }
 
-
 int	start_simulation(t_philo *philos)
 {
-	t_philo	*head;
 	int		n_philos;
 
 	n_philos = philos->rules->number_of_philosophers;
-	head = philos;
 	philos->rules->start_time = time_now_ms();
-	while (n_philos--)
-	{
-		if (pthread_create(&head->thread, NULL, routine, (void *)head) != 0)
-			return (ft_putstr_error("pthread create error\n"));
-		head = head->right_fork->right_philo;
-	}
+	if (!create_threads(philos, n_philos))
+		return (1);
+	if (!create_monitor_detached(philos))
+		return (1);
+	if (!join_philos(philos, n_philos))
+		return (1);
+	return (0);
+}
+
+bool	join_philos(t_philo *philos, int n_philos)
+{
+	t_philo	*head;
+
 	head = philos;
-	n_philos = philos->rules->number_of_philosophers;
 	while (n_philos--)
 	{
 		if (pthread_join(head->thread, NULL) != 0)
 			return (ft_putstr_error("join error\n"));
 		head = head->right_fork->right_philo;
 	}
+	return (true);
+}
+
+bool	create_monitor_detached(t_philo *philos)
+{
 	if (pthread_create(&philos->rules->monitor_thread, NULL, watchdog,
 			(void *)philos) != 0)
-		return (ft_putstr_error("pthread create error\n"));
-	return (pthread_detach(philos->rules->monitor_thread));
+	{
+		ft_putstr_error("pthread monitor create error\n");
+		return (false);
+	}
+	if (pthread_detach(philos->rules->monitor_thread) != 0)
+	{
+		ft_putstr_error("pthread monitor detach error\n");
+		return (false);
+	}
+	return (true);
+}
+
+bool	create_threads(t_philo *philos, int n_philos)
+{
+	t_philo	*head;
+
+	head = philos;
+	while (n_philos--)
+	{
+		if (pthread_create(&head->thread, NULL, routine, (void *)head) != 0)
+		{
+			ft_putstr_error("pthread philo create error\n");
+			return (false);
+		}
+		head = head->right_fork->right_philo;
+	}
+	return (true);
 }
 
 void	*watchdog(void *philos)
@@ -314,6 +350,7 @@ void	eat(t_philo *philosopher)
 	long long	start;
 
 	start = philosopher->rules->start_time;
+	now = time_now_ms();
 	if ((int)(now - philosopher->last_meal) <= philosopher->rules->time_to_die)
 	{
 		pthread_mutex_lock(&philosopher->eat_mutex);
