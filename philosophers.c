@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "philo.h"
+void	debug_print_rules(t_rules rules);
 
 int	main(int argc, char **argv)
 {
@@ -26,14 +27,24 @@ int	main(int argc, char **argv)
 		return (1);
 	philos = prep_table(rules.number_of_philosophers, &rules);
 	if (!philos)
-	{
-		terminate_simulation(philos);
 		return (1);
-	}
+	debug_print_rules(rules);
+	debug_print_rules(*philos->rules);
 	status = 0;
 	status = start_simulation(philos);
 	terminate_simulation(philos);
 	return (status);
+}
+
+void	debug_print_rules(t_rules rules)
+{
+	printf("number of philos: %i\n", rules.number_of_philosophers);
+	printf("number philos must eat: %i\n", rules.number_of_times_each_philosopher_must_eat);
+	printf("someone died: %i\n", rules.someone_died);
+	printf("start time: %lld\n", rules.start_time);
+	printf("time to die: %i\n", rules.time_to_die);
+	printf("time to eat: %i\n", rules.time_to_eat);
+	printf("time to sleep: %i\n\n\n", rules.time_to_sleep);
 }
 
 bool	parse_args(int argc, char **argv, t_rules *rules)
@@ -44,7 +55,7 @@ bool	parse_args(int argc, char **argv, t_rules *rules)
 	rules->time_to_eat = atoi_positive(argv[3]);
 	rules->time_to_sleep = atoi_positive(argv[4]);
 	if (argc == 6)
-		rules->number_of_times_each_philosopher_must_eat = ft_atouint(argv[5]);
+		rules->number_of_times_each_philosopher_must_eat = atoi_positive(argv[5]);
 	else
 		rules->number_of_times_each_philosopher_must_eat = NO_ARG;
 	if (rules->number_of_philosophers == -1
@@ -56,25 +67,61 @@ bool	parse_args(int argc, char **argv, t_rules *rules)
 	return (true);
 }
 
+int	atoi_positive(char *str)
+{
+	int	num;
+
+	if (!str || !*str)
+		return (-1);
+	num = 0;
+	while(*str)
+	{
+		if (*str < '0' || *str > '9')
+			return (-1);
+		num = num * 10 + (*str - '0');
+		str++;
+	}
+	return (num);
+}
+
 t_philo	*prep_table(int amount, t_rules *rules)
 {
 	t_philo	*new_philo;
 	t_philo	*philos;
 	int		id;
 
-	if (amount <= 0 || !philos)
+	if (amount <= 0)
 		return (NULL);
-	philos = NULL;
 	id = 0;
-	while (id < amount)
+	while (++id <= amount)
 	{
 		new_philo = new_head_and_fork(id, rules);
 		if (!new_philo)
+		{
+			terminate_simulation(philos);
 			return (NULL);
+		}
 		cdll_add(&philos, new_philo);
-		id++;
 	}
 	return (philos);
+}
+
+void	cdll_add(t_philo **ptr, t_philo *new)
+{
+	t_philo	*philos;
+
+	philos = *ptr;
+	if (new->id == 1)
+	{
+		philos = new;
+		philos->left_fork = philos->right_fork;
+		philos->left_fork->right_philo = philos;
+		return ;
+	}
+	new->right_fork->right_philo = philos;
+	new->left_fork = philos->left_fork;
+	philos->left_fork->right_philo = new;
+	philos->left_fork = new->right_fork;
 }
 
 t_philo	*new_head_and_fork(int id, t_rules *rules)
@@ -84,14 +131,19 @@ t_philo	*new_head_and_fork(int id, t_rules *rules)
 	philosopher = (t_philo *)malloc(sizeof(t_philo));
 	if (!philosopher)
 		return (NULL);
+	memset(philosopher, 0, sizeof(t_philo));
+	philosopher->right_fork = (t_fork *)malloc(sizeof(t_fork));
+	if (!philosopher->right_fork)
+		return (NULL);
+	memset(philosopher->right_fork, 0, sizeof(t_fork));
 	if (pthread_mutex_init(&philosopher->right_fork->mutex, NULL) != 0)
 	{
 		free(philosopher);
 		return (NULL);
 	}
+	philosopher->id = id;
+	philosopher->right_fork->id = id;
 	philosopher->right_fork->left_philo = philosopher;
-	philosopher->right_fork->right_philo = NULL;
-	philosopher->left_fork = NULL;
 	return (philosopher);
 }
 
@@ -186,11 +238,26 @@ void	*routine(void *arg)
 	return (NULL);
 }
 
+void	philo_sleep(t_philo *philosopher)
+{
+	long long	now;
+	long long	start;
+
+	if (!philosopher)
+		return ;
+	start = philosopher->rules->start_time;
+	now = time_now_ms();
+	printf("%lld %i is sleeping\n", now - start, philosopher->id);
+	usleep(1000 * philosopher->rules->time_to_sleep);
+}
+
 void	think(t_philo *philosopher)
 {
 	long long	now;
 	long long	start;
 
+	if (!philosopher)
+		return ;
 	start = philosopher->rules->start_time;
 	now = time_now_ms();
 	printf("%lld %i is thinking\n", now - start, philosopher->id);
@@ -339,7 +406,22 @@ bool	is_dead(t_philo *philosopher)
 
 void	terminate_simulation(t_philo *philos)
 {
-	/*
-		* Destroy mutexes and free structs
-		*/
+	t_philo	*philo_ptr;
+	t_fork	*fork_ptr;
+	int		n_philos;
+	int		i;
+
+	if (!philos)
+		return ;
+	n_philos = philos->left_fork->left_philo->id;
+	i = 0;
+	while (i < n_philos)
+	{
+		philo_ptr = philos;
+		fork_ptr = philos->right_fork;
+		philos = philos->right_fork->right_philo;
+		free(philo_ptr);
+		free(fork_ptr);
+		i++;
+	}
 }
