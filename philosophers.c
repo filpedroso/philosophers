@@ -11,7 +11,8 @@
 /* ************************************************************************** */
 
 #include "philo.h"
-void	debug_print_rules(t_rules rules);
+
+void		debug_print_rules(t_rules rules);
 
 int	main(int argc, char **argv)
 {
@@ -25,11 +26,11 @@ int	main(int argc, char **argv)
 		return (1);
 	if (pthread_mutex_init(&rules.death_mutex, NULL) != 0)
 		return (1);
-	debug_print_rules(rules);
+	// debug_print_rules(rules);
 	philos = prep_table(rules.number_of_philosophers, &rules);
 	if (!philos)
 		return (1);
-	debug_print_rules(*philos->rules);
+	// debug_print_rules(*philos->rules);
 	status = 0;
 	status = start_simulation(philos);
 	terminate_simulation(philos);
@@ -39,7 +40,8 @@ int	main(int argc, char **argv)
 void	debug_print_rules(t_rules rules)
 {
 	printf("number of philos: %i\n", rules.number_of_philosophers);
-	printf("number philos must eat: %i\n", rules.number_of_times_each_philosopher_must_eat);
+	printf("number philos must eat: %i\n",
+		rules.number_of_times_each_philosopher_must_eat);
 	printf("someone died: %i\n", rules.someone_died);
 	printf("start time: %lld\n", rules.start_time);
 	printf("time to die: %i\n", rules.time_to_die);
@@ -60,8 +62,7 @@ bool	parse_args(int argc, char **argv, t_rules *rules)
 		rules->number_of_times_each_philosopher_must_eat = NO_ARG;
 	if (rules->number_of_philosophers == -1
 		|| rules->time_to_die == -1
-		|| rules->time_to_eat == -1
-		|| rules->time_to_sleep == -1
+		|| rules->time_to_eat == -1 || rules->time_to_sleep == -1
 		|| rules->number_of_times_each_philosopher_must_eat == -1)
 		return (false);
 	return (true);
@@ -74,7 +75,7 @@ int	atoi_positive(char *str)
 	if (!str || !*str)
 		return (-1);
 	num = 0;
-	while(*str)
+	while (*str)
 	{
 		if (*str < '0' || *str > '9')
 			return (-1);
@@ -105,25 +106,23 @@ t_philo	*prep_table(int amount, t_rules *rules)
 		new_philo->rules = rules;
 		cdll_add(&philos, new_philo);
 	}
+	// printf("debug: new_philo working\n");
 	return (philos);
 }
 
 void	cdll_add(t_philo **ptr, t_philo *new)
 {
-	t_philo	*philos;
-
-	philos = *ptr;
-	if (new->id == 1)
+	if (!*ptr)
 	{
-		philos = new;
-		philos->left_fork = philos->right_fork;
-		philos->left_fork->right_philo = philos;
+		*ptr = new;
+		new->left_fork = new->right_fork;
+		new->right_fork->right_philo = new;
 		return ;
 	}
-	new->right_fork->right_philo = philos;
-	new->left_fork = philos->left_fork;
-	philos->left_fork->right_philo = new;
-	philos->left_fork = new->right_fork;
+	new->right_fork->right_philo = (*ptr);
+	new->left_fork = (*ptr)->left_fork;
+	(*ptr)->left_fork->right_philo = new;
+	(*ptr)->left_fork = new->right_fork;
 }
 
 t_philo	*new_philo_fork_pair(int id)
@@ -152,7 +151,7 @@ t_philo	*new_philo_fork_pair(int id)
 
 int	start_simulation(t_philo *philos)
 {
-	int		n_philos;
+	int	n_philos;
 
 	n_philos = philos->rules->number_of_philosophers;
 	philos->rules->start_time = time_now_ms();
@@ -215,15 +214,25 @@ bool	create_threads(t_philo *philos, int n_philos)
 void	*watchdog(void *philos)
 {
 	t_philo	*philosopher;
+	int		i;
 
 	if (!philos)
 		return (NULL);
 	philosopher = (t_philo *)philos;
-	while (!is_dead(philosopher) && !ate_enough(philosopher))
+	while(1)
 	{
-		philosopher = philosopher->right_fork->right_philo;
-		if (!philosopher)
-			break ;
+		i = 0;
+		while (++i < philosopher->rules->number_of_philosophers)
+		{
+			if (is_dead(philosopher))
+			{
+				printf("%lld %i died\n", time_now_ms()
+					- philosopher->rules->start_time, philosopher->id);
+				return (NULL);
+			}
+			philosopher = philosopher->right_fork->right_philo;
+		}
+		usleep(1000);
 	}
 	return (NULL);
 }
@@ -259,17 +268,17 @@ void	*routine(void *arg)
 		one_philo(philosopher);
 		return (NULL);
 	}
-	while (1)
+	while (!should_stop(philosopher))
 	{
-		if (should_stop(philosopher))
-			return (NULL);
-		think(philosopher);
+		if (philosopher->id % 2 == 0)
+			usleep(500);
 		take_forks(philosopher);
 		eat(philosopher);
 		place_forks(philosopher);
 		if (should_stop(philosopher))
 			return (NULL);
 		philo_sleep(philosopher);
+		think(philosopher);
 	}
 	return (NULL);
 }
@@ -291,12 +300,14 @@ void	think(t_philo *philosopher)
 {
 	long long	now;
 	long long	start;
+	int			id;
 
 	if (!philosopher)
 		return ;
 	start = philosopher->rules->start_time;
 	now = time_now_ms();
-	printf("%lld %i is thinking\n", now - start, philosopher->id);
+	id = philosopher->id;
+	printf("%lld %i is thinking\n", now - start, id);
 }
 
 void	one_philo(t_philo *philosopher)
@@ -310,6 +321,7 @@ void	one_philo(t_philo *philosopher)
 	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
 	usleep(philosopher->rules->time_to_die * 1000);
 	is_dead(philosopher);
+	printf("%lld %i died\n", now - start, philosopher->id);
 	pthread_mutex_unlock(&philosopher->right_fork->mutex);
 	return ;
 }
@@ -334,14 +346,14 @@ bool	ate_enough(t_philo *philosopher)
 
 bool	should_stop(t_philo *philosopher)
 {
-	bool	enough_eat;
 	bool	someone_died;
 
 	pthread_mutex_lock(&philosopher->rules->death_mutex);
 	someone_died = philosopher->rules->someone_died;
 	pthread_mutex_unlock(&philosopher->rules->death_mutex);
-	enough_eat = ate_enough(philosopher);
-	return (someone_died || enough_eat);
+	if (someone_died)
+		return (true);
+	return (ate_enough(philosopher));
 }
 
 void	eat(t_philo *philosopher)
@@ -373,69 +385,51 @@ long long	time_now_ms(void)
 
 void	place_forks(t_philo *philosopher)
 {
-	int	philosopher_id;
-
-	philosopher_id = philosopher->id;
-	if (philosopher_id % 2 == 0)
-	{
-		pthread_mutex_unlock(&philosopher->left_fork->mutex);
-		pthread_mutex_unlock(&philosopher->right_fork->mutex);
-	}
-	else
-	{
-		pthread_mutex_unlock(&philosopher->right_fork->mutex);
-		pthread_mutex_unlock(&philosopher->left_fork->mutex);
-	}
+	pthread_mutex_unlock(&philosopher->right_fork->mutex);
+	pthread_mutex_unlock(&philosopher->left_fork->mutex);
 }
 
 void	take_forks(t_philo *philosopher)
 {
-	int			philosopher_id;
 	long long	now;
 	long long	start;
+	t_fork		*first_fork;
+	t_fork		*second_fork;
 
 	start = philosopher->rules->start_time;
-	philosopher_id = philosopher->id;
-	if (philosopher_id % 2 == 0)
+	if (philosopher->left_fork->id < philosopher->right_fork->id)
 	{
-		pthread_mutex_lock(&philosopher->right_fork->mutex);
-		now = time_now_ms();
-		printf("%lld %i has taken a fork\n", now - start, philosopher_id);
-		pthread_mutex_lock(&philosopher->left_fork->mutex);
-		now = time_now_ms();
-		printf("%lld %i has taken a fork\n", now - start, philosopher_id);
+		first_fork = philosopher->left_fork;
+		second_fork = philosopher->right_fork;
 	}
 	else
 	{
-		pthread_mutex_lock(&philosopher->left_fork->mutex);
-		now = time_now_ms();
-		printf("%lld %i has taken a fork\n", now - start, philosopher_id);
-		pthread_mutex_lock(&philosopher->right_fork->mutex);
-		now = time_now_ms();
-		printf("%lld %i has taken a fork\n", now - start, philosopher_id);
+		first_fork = philosopher->right_fork;
+		second_fork = philosopher->left_fork;
 	}
+	pthread_mutex_lock(&first_fork->mutex);
+	now = time_now_ms();
+	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
+	pthread_mutex_lock(&second_fork->mutex);
+	now = time_now_ms();
+	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
 }
 
 bool	is_dead(t_philo *philosopher)
 {
-	long long	now;
-	long long	start;
 	long long	last_meal;
 
-	start = philosopher->rules->start_time;
-	now = time_now_ms();
 	pthread_mutex_lock(&philosopher->eat_mutex);
 	last_meal = philosopher->last_meal;
 	pthread_mutex_unlock(&philosopher->eat_mutex);
-	if ((int)(now - last_meal) > philosopher->rules->time_to_die)
+	if ((int)(time_now_ms() - last_meal) > philosopher->rules->time_to_die)
 	{
-		pthread_mutex_lock(&philosopher->rules->death_mutex);
 		if (philosopher->rules->someone_died == false)
 		{
+			pthread_mutex_lock(&philosopher->rules->death_mutex);
 			philosopher->rules->someone_died = true;
-			printf("%lld %i died\n", now - start, philosopher->id);
+			pthread_mutex_unlock(&philosopher->rules->death_mutex);
 		}
-		pthread_mutex_unlock(&philosopher->rules->death_mutex);
 		return (true);
 	}
 	return (false);
@@ -452,10 +446,13 @@ void	terminate_simulation(t_philo *philos)
 		return ;
 	n_philos = philos->left_fork->left_philo->id;
 	i = 0;
+	pthread_mutex_destroy(&philos->rules->death_mutex);
 	while (i < n_philos)
 	{
 		philo_ptr = philos;
 		fork_ptr = philos->right_fork;
+		pthread_mutex_destroy(&fork_ptr->mutex);
+		pthread_mutex_destroy(&philo_ptr->eat_mutex);
 		philos = philos->right_fork->right_philo;
 		free(philo_ptr);
 		free(fork_ptr);
