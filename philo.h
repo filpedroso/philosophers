@@ -53,6 +53,7 @@ typedef struct s_philo
 typedef struct s_fork
 {
 	int					id;
+	bool				being_used;
 	pthread_mutex_t		mutex;
 	t_philo				*left_philo;
 	t_philo				*right_philo;

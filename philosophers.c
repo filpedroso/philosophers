@@ -146,6 +146,7 @@ t_philo	*new_philo_fork_pair(int id)
 	philosopher->id = id;
 	philosopher->right_fork->id = id;
 	philosopher->right_fork->left_philo = philosopher;
+	philosopher->right_fork->being_used = false;
 	return (philosopher);
 }
 
@@ -270,8 +271,6 @@ void	*routine(void *arg)
 	}
 	while (!should_stop(philosopher))
 	{
-		if (philosopher->id % 2 == 0)
-			usleep(500);
 		take_forks(philosopher);
 		eat(philosopher);
 		place_forks(philosopher);
@@ -362,17 +361,17 @@ void	eat(t_philo *philosopher)
 	long long	start;
 
 	start = philosopher->rules->start_time;
+	pthread_mutex_lock(&philosopher->eat_mutex);
 	now = time_now_ms();
 	if ((int)(now - philosopher->last_meal) <= philosopher->rules->time_to_die)
 	{
-		pthread_mutex_lock(&philosopher->eat_mutex);
 		now = time_now_ms();
 		philosopher->last_meal = now;
 		printf("%lld %i is eating\n", now - start, philosopher->id);
 		usleep(philosopher->rules->time_to_eat * 1000);
 		philosopher->meals_eaten++;
-		pthread_mutex_unlock(&philosopher->eat_mutex);
 	}
+	pthread_mutex_unlock(&philosopher->eat_mutex);
 }
 
 long long	time_now_ms(void)
@@ -385,34 +384,38 @@ long long	time_now_ms(void)
 
 void	place_forks(t_philo *philosopher)
 {
-	pthread_mutex_unlock(&philosopher->right_fork->mutex);
+	pthread_mutex_lock(&philosopher->left_fork->mutex);
+	pthread_mutex_lock(&philosopher->right_fork->mutex);
+	philosopher->left_fork->being_used = false;
+	philosopher->right_fork->being_used = false;
 	pthread_mutex_unlock(&philosopher->left_fork->mutex);
+	pthread_mutex_unlock(&philosopher->right_fork->mutex);
 }
 
 void	take_forks(t_philo *philosopher)
 {
-	long long	now;
 	long long	start;
-	t_fork		*first_fork;
-	t_fork		*second_fork;
-
+	
 	start = philosopher->rules->start_time;
-	if (philosopher->left_fork->id < philosopher->right_fork->id)
+	while (1)
 	{
-		first_fork = philosopher->left_fork;
-		second_fork = philosopher->right_fork;
+		pthread_mutex_lock(&philosopher->left_fork->mutex);
+		pthread_mutex_lock(&philosopher->right_fork->mutex);
+		if (!philosopher->left_fork->being_used
+			&& !philosopher->right_fork->being_used)
+		{
+			philosopher->left_fork->being_used = true;
+			printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
+			philosopher->right_fork->being_used = true;
+			printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
+			pthread_mutex_unlock(&philosopher->left_fork->mutex);
+			pthread_mutex_unlock(&philosopher->right_fork->mutex);
+			break ;
+		}
+		pthread_mutex_unlock(&philosopher->left_fork->mutex);
+		pthread_mutex_unlock(&philosopher->right_fork->mutex);
+		usleep(1000);
 	}
-	else
-	{
-		first_fork = philosopher->right_fork;
-		second_fork = philosopher->left_fork;
-	}
-	pthread_mutex_lock(&first_fork->mutex);
-	now = time_now_ms();
-	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
-	pthread_mutex_lock(&second_fork->mutex);
-	now = time_now_ms();
-	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
 }
 
 bool	is_dead(t_philo *philosopher)
