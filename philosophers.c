@@ -222,7 +222,7 @@ void	*watchdog(void *philos)
 	philosopher = (t_philo *)philos;
 	while(1)
 	{
-		i = 0;
+		i = -1;
 		while (++i < philosopher->rules->number_of_philosophers)
 		{
 			if (is_dead(philosopher))
@@ -233,7 +233,7 @@ void	*watchdog(void *philos)
 			}
 			philosopher = philosopher->right_fork->right_philo;
 		}
-		usleep(7000);
+		sleep_millisecs(5);
 	}
 	return (NULL);
 }
@@ -283,7 +283,6 @@ void	*routine(void *arg)
 
 bool	philo_sleep(t_philo *philosopher)
 {
-	long long	now;
 	long long	start;
 
 	if (!philosopher)
@@ -291,9 +290,8 @@ bool	philo_sleep(t_philo *philosopher)
 	if (should_stop(philosopher))
 		return (false);
 	start = philosopher->rules->start_time;
-	now = time_now_ms();
-	printf("%lld %i is sleeping\n", now - start, philosopher->id);
-	usleep(1000 * philosopher->rules->time_to_sleep);
+	printf("%lld %i is sleeping\n", time_now_ms() - start, philosopher->id);
+	sleep_millisecs(philosopher->rules->time_to_sleep);
 	return (true);
 }
 
@@ -323,7 +321,7 @@ void	one_philo(t_philo *philosopher)
 	now = time_now_ms();
 	pthread_mutex_lock(&philosopher->right_fork->mutex);
 	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
-	usleep(philosopher->rules->time_to_die * 1000);
+	sleep_millisecs(philosopher->rules->time_to_die);
 	is_dead(philosopher);
 	printf("%lld %i died\n", now - start, philosopher->id);
 	pthread_mutex_unlock(&philosopher->right_fork->mutex);
@@ -368,8 +366,9 @@ bool	eat(t_philo *philosopher)
 	long long	start;
 
 	start = philosopher->rules->start_time;
-	if ((int)(time_now_ms() - philosopher->last_meal) <= philosopher->rules->time_to_die
-			&& (should_stop(philosopher) == false))
+	if ((time_now_ms() - philosopher->last_meal)
+		<= (long long)philosopher->rules->time_to_die
+		&& (should_stop(philosopher) == false))
 	{
 
 		take_forks(philosopher);
@@ -379,7 +378,7 @@ bool	eat(t_philo *philosopher)
 		if (should_stop(philosopher))
 			return (false);
 		printf("%lld %i is eating\n", philosopher->last_meal - start, philosopher->id);
-		usleep(philosopher->rules->time_to_eat * 1000);
+		sleep_millisecs(philosopher->rules->time_to_eat);
 		place_forks(philosopher);
 		pthread_mutex_lock(&philosopher->eat_mutex);
 		philosopher->meals_eaten++;
@@ -389,6 +388,16 @@ bool	eat(t_philo *philosopher)
 		return (false);
 	return (true);
 }
+
+void	sleep_millisecs(long long milliseconds)
+{
+    long	start;
+
+	start = time_now_ms();
+    while ((time_now_ms() - start) < milliseconds)
+        usleep(500);
+}
+
 
 long long	time_now_ms(void)
 {
@@ -401,44 +410,61 @@ long long	time_now_ms(void)
 void	place_forks(t_philo *philosopher)
 {
 	pthread_mutex_lock(&philosopher->left_fork->mutex);
-	pthread_mutex_lock(&philosopher->right_fork->mutex);
 	philosopher->left_fork->being_used = false;
-	philosopher->right_fork->being_used = false;
 	pthread_mutex_unlock(&philosopher->left_fork->mutex);
+	pthread_mutex_lock(&philosopher->right_fork->mutex);
+	philosopher->right_fork->being_used = false;
 	pthread_mutex_unlock(&philosopher->right_fork->mutex);
 }
 
-void	take_forks(t_philo *philosopher)
+void take_forks(t_philo *philosopher)
 {
-	long long	start;
-	
-	start = philosopher->rules->start_time;
-	while (1)
-	{
-		pthread_mutex_lock(&philosopher->left_fork->mutex);
-		pthread_mutex_lock(&philosopher->right_fork->mutex);
-		if (!philosopher->left_fork->being_used
-			&& !philosopher->right_fork->being_used)
-		{
-			if (should_stop(philosopher))
-			{
-				pthread_mutex_unlock(&philosopher->left_fork->mutex);	
-				pthread_mutex_unlock(&philosopher->right_fork->mutex);
-				return ;
-			}
-			philosopher->left_fork->being_used = true;
-			printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
-			philosopher->right_fork->being_used = true;
-			printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
-			pthread_mutex_unlock(&philosopher->left_fork->mutex);
-			pthread_mutex_unlock(&philosopher->right_fork->mutex);
-			break ;
-		}
-		pthread_mutex_unlock(&philosopher->left_fork->mutex);
-		pthread_mutex_unlock(&philosopher->right_fork->mutex);
-		usleep(100);
-	}
+    long long start = philosopher->rules->start_time;
+    pthread_mutex_t *first;
+    pthread_mutex_t *second;
+
+    if (philosopher->left_fork->id < philosopher->right_fork->id)
+    {
+        first = &philosopher->left_fork->mutex;
+        second = &philosopher->right_fork->mutex;
+    }
+    else
+    {
+        first = &philosopher->right_fork->mutex;
+        second = &philosopher->left_fork->mutex;
+    }
+
+    while (1)
+    {
+        pthread_mutex_lock(first);
+        pthread_mutex_lock(second);
+
+        if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
+        {
+            if (should_stop(philosopher))
+            {
+                pthread_mutex_unlock(second);
+                pthread_mutex_unlock(first);
+                return;
+            }
+
+            philosopher->left_fork->being_used = true;
+            philosopher->right_fork->being_used = true;
+
+            printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
+            printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
+
+            pthread_mutex_unlock(second);
+            pthread_mutex_unlock(first);
+            break;
+        }
+
+        pthread_mutex_unlock(second);
+        pthread_mutex_unlock(first);
+        usleep(100); // wait a tiny bit before retry
+    }
 }
+
 
 bool	is_dead(t_philo *philosopher)
 {
@@ -447,7 +473,8 @@ bool	is_dead(t_philo *philosopher)
 	pthread_mutex_lock(&philosopher->eat_mutex);
 	last_meal = philosopher->last_meal;
 	pthread_mutex_unlock(&philosopher->eat_mutex);
-	if ((int)(time_now_ms() - last_meal) > philosopher->rules->time_to_die)
+	if ((time_now_ms() - last_meal)
+		> (long long)philosopher->rules->time_to_die)
 	{
 		if (philosopher->rules->someone_died == false)
 		{

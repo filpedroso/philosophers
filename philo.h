@@ -82,5 +82,6 @@ bool					philo_sleep(t_philo *philosopher);
 bool					join_philos(t_philo *philos, int n_philos);
 bool					create_monitor_detached(t_philo *philos);
 bool					create_threads(t_philo *philos, int n_philos);
+void					sleep_millisecs(long long usec);
 
 #endif
