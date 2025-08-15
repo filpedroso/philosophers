@@ -376,6 +376,8 @@ bool	eat(t_philo *philosopher)
 		pthread_mutex_lock(&philosopher->eat_mutex);
 		philosopher->last_meal = time_now_ms();
 		pthread_mutex_unlock(&philosopher->eat_mutex);
+		if (should_stop(philosopher))
+			return (false);
 		printf("%lld %i is eating\n", philosopher->last_meal - start, philosopher->id);
 		usleep(philosopher->rules->time_to_eat * 1000);
 		place_forks(philosopher);
@@ -418,6 +420,12 @@ void	take_forks(t_philo *philosopher)
 		if (!philosopher->left_fork->being_used
 			&& !philosopher->right_fork->being_used)
 		{
+			if (should_stop(philosopher))
+			{
+				pthread_mutex_unlock(&philosopher->left_fork->mutex);	
+				pthread_mutex_unlock(&philosopher->right_fork->mutex);
+				return ;
+			}
 			philosopher->left_fork->being_used = true;
 			printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
 			philosopher->right_fork->being_used = true;
