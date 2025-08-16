@@ -36,6 +36,8 @@ typedef struct s_rules
 	pthread_mutex_t		death_mutex;
 	pthread_t			monitor_thread;
 	long long			start_time;
+	bool				simulation_started;
+	pthread_mutex_t		simul_mutex;
 }						t_rules;
 
 typedef struct s_philo
@@ -83,5 +85,6 @@ bool					join_philos(t_philo *philos, int n_philos);
 bool					create_monitor_detached(t_philo *philos);
 bool					create_threads(t_philo *philos, int n_philos);
 void					sleep_millisecs(long long usec);
+bool					simulation_has_started(t_rules *rules);
 
 #endif

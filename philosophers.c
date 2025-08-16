@@ -13,6 +13,7 @@
 #include "philo.h"
 
 void		debug_print_rules(t_rules rules);
+void	debug_print_philos_list(t_philo *philos);
 
 int	main(int argc, char **argv)
 {
@@ -32,9 +33,28 @@ int	main(int argc, char **argv)
 		return (1);
 	// debug_print_rules(*philos->rules);
 	status = 0;
+	// debug_print_philos_list(philos);
 	status = start_simulation(philos);
 	terminate_simulation(philos);
 	return (status);
+}
+
+void	debug_print_philos_list(t_philo *philos)
+{
+	for(int i = 1; i <= philos->rules->number_of_philosophers; i++) {
+		printf("philo id: %i\n", philos->id);
+		printf("last meal: %lld\n", philos->last_meal);
+		printf("left fork id: %i\n", philos->left_fork->id);
+		printf("right fork id: %i\n", philos->right_fork->id);
+		printf("meals eaten: %i\n", philos->meals_eaten);
+		printf("rules:\n");
+		debug_print_rules(*philos->rules);
+		printf("      | \n");
+		printf("      | \n");
+		printf("      | \n");
+		printf("      V \n");
+		philos = philos->right_fork->right_philo;
+	}
 }
 
 void	debug_print_rules(t_rules rules)
@@ -46,7 +66,7 @@ void	debug_print_rules(t_rules rules)
 	printf("start time: %lld\n", rules.start_time);
 	printf("time to die: %i\n", rules.time_to_die);
 	printf("time to eat: %i\n", rules.time_to_eat);
-	printf("time to sleep: %i\n\n\n", rules.time_to_sleep);
+	printf("time to sleep: %i\n", rules.time_to_sleep);
 }
 
 bool	parse_args(int argc, char **argv, t_rules *rules)
@@ -209,6 +229,10 @@ bool	create_threads(t_philo *philos, int n_philos)
 		}
 		head = head->right_fork->right_philo;
 	}
+	pthread_mutex_init(&philos->rules->simul_mutex, NULL);
+	pthread_mutex_lock(&philos->rules->simul_mutex);
+	philos->rules->simulation_started = true;
+	pthread_mutex_unlock(&philos->rules->simul_mutex);
 	return (true);
 }
 
@@ -263,12 +287,11 @@ void	*routine(void *arg)
 	philosopher = (t_philo *)arg;
 	if (!philosopher)
 		return (NULL);
+	while (simulation_has_started(philosopher->rules) == false)
+		usleep(500);
 	philosopher->last_meal = time_now_ms();
 	if (philosopher->rules->number_of_philosophers == 1)
-	{
-		one_philo(philosopher);
-		return (NULL);
-	}
+		return (one_philo(philosopher), NULL);
 	while (1)
 	{
 		if (!eat(philosopher))
@@ -281,13 +304,28 @@ void	*routine(void *arg)
 	return (NULL);
 }
 
+bool	simulation_has_started(t_rules *rules)
+{
+	bool	has_started;
+
+	pthread_mutex_lock(&rules->simul_mutex);
+	has_started = rules->simulation_started;
+	pthread_mutex_unlock(&rules->simul_mutex);
+	return (has_started);
+}
+
 bool	is_starving(t_philo *philosopher)
 {
 	bool	is_starving;
+	int		base_time_left;
+	int		base_time_spent;
 
+	base_time_spent = philosopher->rules->time_to_eat
+		+ philosopher->rules->time_to_sleep;
+	base_time_left = philosopher->rules->time_to_die - base_time_spent;
 	pthread_mutex_lock(&philosopher->eat_mutex);
 	is_starving = (time_now_ms() - philosopher->last_meal)
-		> (philosopher->rules->time_to_die - 100);
+		> (base_time_spent + base_time_left / 3);
 	pthread_mutex_unlock(&philosopher->eat_mutex);
 	return (is_starving);
 }
@@ -321,7 +359,7 @@ bool	think(t_philo *philosopher)
 	id = philosopher->id;
 	printf("%lld %i is thinking\n", now - start, id);
 	while (!is_starving(philosopher))
-		sleep_millisecs(40);
+		sleep_millisecs(30);
 	return (true);
 }
 
@@ -451,30 +489,25 @@ void take_forks(t_philo *philosopher)
     {
         pthread_mutex_lock(first);
         pthread_mutex_lock(second);
-
         if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
         {
             if (should_stop(philosopher))
             {
-                pthread_mutex_unlock(second);
                 pthread_mutex_unlock(first);
+                pthread_mutex_unlock(second);
                 return;
             }
-
             philosopher->left_fork->being_used = true;
             philosopher->right_fork->being_used = true;
-
             printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
             printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
-
-            pthread_mutex_unlock(second);
             pthread_mutex_unlock(first);
+            pthread_mutex_unlock(second);
             break;
         }
-
-        pthread_mutex_unlock(second);
         pthread_mutex_unlock(first);
-        usleep(100); // wait a tiny bit before retry
+        pthread_mutex_unlock(second);
+        usleep(100);
     }
 }
 
