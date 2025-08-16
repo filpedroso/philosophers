@@ -12,7 +12,50 @@
 
 #include "philo.h"
 
-void	take_forks(t_philo *philosopher)
+void take_forks(t_philo *philosopher)
+{
+    long long start = philosopher->rules->start_time;
+    pthread_mutex_t *first;
+    pthread_mutex_t *second;
+
+    if (philosopher->left_fork->id < philosopher->right_fork->id)
+    {
+        first = &philosopher->left_fork->mutex;
+        second = &philosopher->right_fork->mutex;
+    }
+    else
+    {
+        first = &philosopher->right_fork->mutex;
+        second = &philosopher->left_fork->mutex;
+    }
+
+    while (1)
+    {
+        pthread_mutex_lock(first);
+        pthread_mutex_lock(second);
+        if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
+        {
+            if (should_stop(philosopher))
+            {
+                pthread_mutex_unlock(first);
+                pthread_mutex_unlock(second);
+                return;
+            }
+            philosopher->left_fork->being_used = true;
+            philosopher->right_fork->being_used = true;
+            printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
+            printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
+            pthread_mutex_unlock(first);
+            pthread_mutex_unlock(second);
+            break;
+        }
+        pthread_mutex_unlock(first);
+        pthread_mutex_unlock(second);
+        usleep(100);
+    }
+}
+
+/* void	take_forks(t_philo *philosopher)
 {
 	long long	start;
 
@@ -38,7 +81,7 @@ void	take_forks(t_philo *philosopher)
 		pthread_mutex_unlock(&philosopher->right_fork->mutex);
 		usleep(100);
 	}
-}
+} */
 
 void	place_forks(t_philo *philosopher)
 {

@@ -21,7 +21,9 @@ void	*routine(void *arg)
 		return (NULL);
 	while (!simulation_has_started(philosopher->rules))
 		usleep(500);
+	pthread_mutex_lock(&philosopher->eat_mutex);
 	philosopher->last_meal = time_now_ms();
+	pthread_mutex_unlock(&philosopher->eat_mutex);
 	if (philosopher->rules->number_of_philosophers == 1)
 		return (one_philo(philosopher), NULL);
 	while (1)
