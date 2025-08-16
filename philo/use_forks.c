@@ -17,7 +17,7 @@ void	take_forks(t_philo *philosopher)
 	long long	start;
 
 	start = philosopher->rules->start_time;
-	while (1)
+	while (i_am_alive(philosopher))
 	{
 		pthread_mutex_lock(&philosopher->left_fork->mutex);
 		pthread_mutex_lock(&philosopher->right_fork->mutex);
