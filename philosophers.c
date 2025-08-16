@@ -27,16 +27,28 @@ int	main(int argc, char **argv)
 		return (1);
 	if (pthread_mutex_init(&rules.death_mutex, NULL) != 0)
 		return (1);
-	// debug_print_rules(rules);
 	philos = prep_table(rules.number_of_philosophers, &rules);
 	if (!philos)
 		return (1);
-	// debug_print_rules(*philos->rules);
 	status = 0;
-	// debug_print_philos_list(philos);
 	status = start_simulation(philos);
 	terminate_simulation(philos);
 	return (status);
+}
+
+void	debug_print_myself(t_philo *philos)
+{
+	printf("philo id: %i\n", philos->id);
+	printf("last meal: %lld\n", philos->last_meal);
+	printf("left fork id: %i\n", philos->left_fork->id);
+	printf("right fork id: %i\n", philos->right_fork->id);
+	printf("meals eaten: %i\n", philos->meals_eaten);
+	printf("rules:\n");
+	debug_print_rules(*philos->rules);
+	printf("      | \n");
+	printf("      | \n");
+	printf("      | \n");
+	printf("      V \n");
 }
 
 void	debug_print_philos_list(t_philo *philos)
@@ -126,7 +138,6 @@ t_philo	*prep_table(int amount, t_rules *rules)
 		new_philo->rules = rules;
 		cdll_add(&philos, new_philo);
 	}
-	// printf("debug: new_philo working\n");
 	return (philos);
 }
 
@@ -175,11 +186,17 @@ int	start_simulation(t_philo *philos)
 	int	n_philos;
 
 	n_philos = philos->rules->number_of_philosophers;
-	philos->rules->start_time = time_now_ms();
 	if (!create_threads(philos, n_philos))
 		return (1);
 	if (!create_monitor_detached(philos))
 		return (1);
+	if (pthread_mutex_init(&philos->rules->simul_mutex, NULL) != 0)
+		return (false);
+	if (pthread_mutex_lock(&philos->rules->simul_mutex) != 0)
+		return (false);
+	philos->rules->simulation_started = true;
+	philos->rules->start_time = time_now_ms();
+	pthread_mutex_unlock(&philos->rules->simul_mutex);
 	if (!join_philos(philos, n_philos))
 		return (1);
 	return (0);
@@ -229,10 +246,6 @@ bool	create_threads(t_philo *philos, int n_philos)
 		}
 		head = head->right_fork->right_philo;
 	}
-	pthread_mutex_init(&philos->rules->simul_mutex, NULL);
-	pthread_mutex_lock(&philos->rules->simul_mutex);
-	philos->rules->simulation_started = true;
-	pthread_mutex_unlock(&philos->rules->simul_mutex);
 	return (true);
 }
 
@@ -244,6 +257,9 @@ void	*watchdog(void *philos)
 	if (!philos)
 		return (NULL);
 	philosopher = (t_philo *)philos;
+	while (!simulation_has_started(philosopher->rules))
+		usleep(500);
+	sleep_millisecs(5);
 	while(1)
 	{
 		i = -1;
@@ -287,7 +303,7 @@ void	*routine(void *arg)
 	philosopher = (t_philo *)arg;
 	if (!philosopher)
 		return (NULL);
-	while (simulation_has_started(philosopher->rules) == false)
+	while (!simulation_has_started(philosopher->rules))
 		usleep(500);
 	philosopher->last_meal = time_now_ms();
 	if (philosopher->rules->number_of_philosophers == 1)
@@ -308,7 +324,8 @@ bool	simulation_has_started(t_rules *rules)
 {
 	bool	has_started;
 
-	pthread_mutex_lock(&rules->simul_mutex);
+	if (pthread_mutex_lock(&rules->simul_mutex) != 0)
+		return (false);
 	has_started = rules->simulation_started;
 	pthread_mutex_unlock(&rules->simul_mutex);
 	return (has_started);
@@ -359,7 +376,7 @@ bool	think(t_philo *philosopher)
 	id = philosopher->id;
 	printf("%lld %i is thinking\n", now - start, id);
 	while (!is_starving(philosopher))
-		sleep_millisecs(30);
+		sleep_millisecs(5);
 	return (true);
 }
 
@@ -414,21 +431,16 @@ bool	should_stop(t_philo *philosopher)
 
 bool	eat(t_philo *philosopher)
 {
-	long long	start;
-
-	start = philosopher->rules->start_time;
-	if ((time_now_ms() - philosopher->last_meal)
-		<= (long long)philosopher->rules->time_to_die
-		&& (should_stop(philosopher) == false))
+	if (i_am_alive(philosopher) && !should_stop(philosopher))
 	{
-
 		take_forks(philosopher);
 		pthread_mutex_lock(&philosopher->eat_mutex);
 		philosopher->last_meal = time_now_ms();
 		pthread_mutex_unlock(&philosopher->eat_mutex);
 		if (should_stop(philosopher))
 			return (false);
-		printf("%lld %i is eating\n", philosopher->last_meal - start, philosopher->id);
+		printf("%lld %i is eating\n", philosopher->last_meal
+				- philosopher->rules->start_time, philosopher->id);
 		sleep_millisecs(philosopher->rules->time_to_eat);
 		place_forks(philosopher);
 		pthread_mutex_lock(&philosopher->eat_mutex);
@@ -438,6 +450,12 @@ bool	eat(t_philo *philosopher)
 	else
 		return (false);
 	return (true);
+}
+
+bool	i_am_alive(t_philo *philosopher)
+{
+	return ((time_now_ms() - philosopher->last_meal)
+		<= (long long)philosopher->rules->time_to_die);
 }
 
 void	sleep_millisecs(long long milliseconds)
@@ -545,6 +563,7 @@ void	terminate_simulation(t_philo *philos)
 	n_philos = philos->left_fork->left_philo->id;
 	i = 0;
 	pthread_mutex_destroy(&philos->rules->death_mutex);
+	pthread_mutex_destroy(&philos->rules->simul_mutex);
 	while (i < n_philos)
 	{
 		philo_ptr = philos;

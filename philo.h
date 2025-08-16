@@ -86,5 +86,6 @@ bool					create_monitor_detached(t_philo *philos);
 bool					create_threads(t_philo *philos, int n_philos);
 void					sleep_millisecs(long long usec);
 bool					simulation_has_started(t_rules *rules);
+bool					i_am_alive(t_philo *philosopher);
 
 #endif
