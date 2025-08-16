@@ -281,6 +281,17 @@ void	*routine(void *arg)
 	return (NULL);
 }
 
+bool	is_starving(t_philo *philosopher)
+{
+	bool	is_starving;
+
+	pthread_mutex_lock(&philosopher->eat_mutex);
+	is_starving = (time_now_ms() - philosopher->last_meal)
+		> (philosopher->rules->time_to_die - 100);
+	pthread_mutex_unlock(&philosopher->eat_mutex);
+	return (is_starving);
+}
+
 bool	philo_sleep(t_philo *philosopher)
 {
 	long long	start;
@@ -309,6 +320,8 @@ bool	think(t_philo *philosopher)
 	now = time_now_ms();
 	id = philosopher->id;
 	printf("%lld %i is thinking\n", now - start, id);
+	while (!is_starving(philosopher))
+		sleep_millisecs(40);
 	return (true);
 }
 
