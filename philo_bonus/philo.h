@@ -63,7 +63,7 @@ bool					think(t_philo *philosopher);
 void					one_philo(t_philo *philosopher);
 bool					ate_enough(t_philo *philosopher);
 bool					should_stop(t_philo *philosopher);
-bool					eat(t_philo *philosopher);
+bool					eat(t_philo philosopher);
 long long				time_now_ms(void);
 void					place_forks(t_philo *philosopher);
 void					take_forks(t_philo *philosopher);
@@ -75,7 +75,7 @@ bool					create_monitor_detached(t_philo *philos);
 bool					create_threads(t_philo *philos, int n_philos);
 void					sleep_millisecs(long long usec);
 bool					simulation_has_started(t_rules *rules);
-bool					i_am_alive(t_philo *philosopher);
+bool					i_am_alive(t_philo philosopher);
 bool					is_starving(t_philo *philosopher);
 
 #endif

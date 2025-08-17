@@ -132,3 +132,21 @@ void	routine(t_rules rules, int id)
 		think(philosopher);
 	}
 }
+
+void	eat(t_philo philosopher)
+{
+	if (i_am_alive(philosopher))
+	{
+		take_forks(philosopher);
+		philosopher.last_meal = time_now_ms();
+		printf("%lld %i is eating\n", philosopher.last_meal - philosopher.rules.start_time, philosopher.id);
+		sleep_millisecs(philosopher.rules.time_to_eat);
+		place_forks(philosopher);
+		philosopher.meals_eaten++;
+		if (philosopher.meals_eaten
+			== philosopher.rules.number_of_times_each_philosopher_must_eat);
+			exit(0);
+	}
+	else
+		exit(1);
+}
