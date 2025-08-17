@@ -33,24 +33,19 @@ typedef struct s_rules
 	int					time_to_sleep;
 	int					number_of_times_each_philosopher_must_eat;
 	bool				someone_died;
-	pthread_mutex_t		death_mutex;
-	pthread_t			monitor_thread;
 	long long			start_time;
 	bool				simulation_started;
-	pthread_mutex_t		simul_mutex;
 }						t_rules;
 
 typedef struct s_philo
 {
 	int					id;
-	pthread_t			thread;
-	pthread_mutex_t		eat_mutex;
 	long long			last_meal;
 	int					meals_eaten;
 	t_rules				*rules;
-	struct s_fork		*left_fork;
-	struct s_fork		*right_fork;
-}						t_philo;
+	struct s_philo		*right_philo;
+	struct s_philo		*left_philo;
+}							t_philo;
 
 typedef struct s_fork
 {

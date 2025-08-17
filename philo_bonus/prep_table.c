@@ -24,7 +24,7 @@ t_philo	*prep_table(int amount, t_rules *rules)
 	philos = NULL;
 	while (++id <= amount)
 	{
-		new_philo = new_philo_fork_pair(id);
+		new_philo = new_philo_node(id);
 		if (!new_philo)
 		{
 			terminate_simulation(philos);
@@ -36,7 +36,7 @@ t_philo	*prep_table(int amount, t_rules *rules)
 	return (philos);
 }
 
-t_philo	*new_philo_fork_pair(int id)
+t_philo	*new_philo_node(int id)
 {
 	t_philo	*philosopher;
 
@@ -44,20 +44,9 @@ t_philo	*new_philo_fork_pair(int id)
 	if (!philosopher)
 		return (NULL);
 	memset(philosopher, 0, sizeof(t_philo));
-	philosopher->right_fork = (t_fork *)malloc(sizeof(t_fork));
-	if (!philosopher->right_fork)
-		return (NULL);
-	memset(philosopher->right_fork, 0, sizeof(t_fork));
-	if (pthread_mutex_init(&philosopher->right_fork->mutex, NULL) != 0
-		|| pthread_mutex_init(&philosopher->eat_mutex, NULL) != 0)
-	{
-		free(philosopher);
-		return (NULL);
-	}
 	philosopher->id = id;
-	philosopher->right_fork->id = id;
-	philosopher->right_fork->left_philo = philosopher;
-	philosopher->right_fork->being_used = false;
+	philosopher->left_philo = philosopher;
+	philosopher->right_philo = philosopher;
 	return (philosopher);
 }
 
