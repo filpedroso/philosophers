@@ -15,19 +15,14 @@
 int	main(int argc, char **argv)
 {
 	t_rules	rules;
-	t_philo	*philos;
 	int		status;
 
 	if ((argc != 5) && (argc != 6))
 		return (1);
 	if (!parse_args(argc, argv, &rules))
 		return (1);
-	philos = prep_table(rules.number_of_philosophers, &rules);
-	if (!philos)
-		return (1);
 	status = 0;
-	status = start_simulation(philos);
-	terminate_simulation(philos);
+	status = simulation(rules);
 	return (status);
 }
 
@@ -67,53 +62,73 @@ int	atoi_positive(char *str)
 	return (num);
 }
 
-t_philo	*prep_table(int amount, t_rules *rules)
+int	simulation(t_rules rules)
 {
-	t_philo	*new_philo;
-	t_philo	*philos;
-	int		id;
+	pid_t	*pids;
 
-	if (amount <= 0)
-		return (NULL);
-	id = 0;
-	philos = NULL;
-	while (++id <= amount)
+	pids = (pid_t *)malloc(sizeof(pid_t) * rules.number_of_philosophers);
+	if (!pids)
+		return (1);
+	rules.start_time = time_now_ms();
+	create_processes(rules, pids);
+	reap_processes(rules, pids);
+	free(pids);
+	return (0);
+}
+
+void	reap_processes(t_rules rules, pid_t *pids)
+{
+	int		status;
+	int		i;
+
+
+	while (1)
 	{
-		new_philo = new_philo_node(id);
-		if (!new_philo)
+		if (waitpid(-1, &status, 0) == -1)
+			break;
+		if (WIFEXITED(status) && WEXITSTATUS(status) == 1)
 		{
-			terminate_simulation(philos);
-			return (NULL);
+			i = -1;
+			while (++i < rules.number_of_philosophers)
+				kill(pids[i], SIGKILL);
+			i = -1;
+			while (++i < rules.number_of_philosophers)
+				waitpid(pids[i], NULL, 0);
+			break;
 		}
-		new_philo->rules = rules;
-		cdll_add(&philos, new_philo);
 	}
-	return (philos);
 }
 
-t_philo	*new_philo_node(int id)
+void	create_processes(t_rules rules, pid_t *pids)
 {
-	t_philo	*philosopher;
+	int		i;
+	pid_t	pid;
 
-	philosopher = (t_philo *)malloc(sizeof(t_philo));
-	if (!philosopher)
-		return (NULL);
-	memset(philosopher, 0, sizeof(t_philo));
-	philosopher->id = id;
-	philosopher->left_philo = philosopher;
-	philosopher->right_philo = philosopher;
-	return (philosopher);
-}
-
-void	cdll_add(t_philo **ptr, t_philo *new)
-{
-	if (!*ptr)
+	rules.forks = sem_open("forks", O_CREAT, rules.number_of_philosophers);
+	i = -1;
+	while (++i < rules.number_of_philosophers)
 	{
-		*ptr = new;
-		return ;
+		pid = fork();
+		if (pid == 0)
+			routine(rules, i + 1);
+		else
+			pids[i] = pid;
 	}
-	new->right_philo = (*ptr);
-	new->left_philo = (*ptr)->left_philo;
-	(*ptr)->left_philo->right_philo = new;
-	(*ptr)->left_philo = new;
+	sem_unlink("forks");
+}
+
+void	routine(t_rules rules, int id)
+{
+	t_philo	philosopher;
+
+	philosopher.id = id;
+	philosopher.rules = rules;
+	philosopher.meals_eaten = 0;
+	philosopher.last_meal = time_now_ms();
+	while (1)
+	{
+		eat(philosopher);
+		philo_sleep(philosopher);
+		think(philosopher);
+	}
 }

@@ -20,6 +20,7 @@
 # include <string.h>
 # include <sys/time.h>
 # include <unistd.h>
+# include <semaphore.h>
 
 # define NO_ARG -2
 
@@ -32,9 +33,8 @@ typedef struct s_rules
 	int					time_to_eat;
 	int					time_to_sleep;
 	int					number_of_times_each_philosopher_must_eat;
-	bool				someone_died;
 	long long			start_time;
-	bool				simulation_started;
+	sem_t				*forks;
 }						t_rules;
 
 typedef struct s_philo
@@ -42,19 +42,13 @@ typedef struct s_philo
 	int					id;
 	long long			last_meal;
 	int					meals_eaten;
-	t_rules				*rules;
-	struct s_philo		*right_philo;
-	struct s_philo		*left_philo;
+	t_rules				rules;
 }							t_philo;
 
-typedef struct s_fork
+typedef struct	s_forks
 {
-	int					id;
-	bool				being_used;
-	pthread_mutex_t		mutex;
-	t_philo				*left_philo;
-	t_philo				*right_philo;
-}						t_fork;
+	...;
+}				t_forks;
 
 bool					parse_args(int argc, char **argv, t_rules *rules);
 int						atoi_positive(char *str);
