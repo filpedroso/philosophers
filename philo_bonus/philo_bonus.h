@@ -41,7 +41,7 @@ typedef struct s_philo
 	int			id;
 	long long	last_meal;
 	int			meals_eaten;
-	t_rules		rules;
+	t_rules		*rules;
 }				t_philo;
 
 void			create_processes(t_rules rules, pid_t *pids);
@@ -50,7 +50,7 @@ bool			parse_args(int argc, char **argv, t_rules *rules);
 int				atoi_positive(char *str);
 int				simulation(t_rules rules);
 int				ft_putstr_error(char *s);
-void			routine(t_rules rules, int id);
+void			routine(t_rules *rules, int id);
 void			think(t_philo *philosopher);
 void			one_philo(t_philo *philosopher);
 void			eat(t_philo *philosopher);
@@ -59,7 +59,7 @@ void			place_forks(t_philo *philosopher);
 void			take_forks(t_philo *philosopher);
 void			reap_processes(t_rules rules, pid_t *pids);
 void			philo_sleep(t_philo *philosopher);
-void			sleep_millisecs(long long usec);
+void			sleep_and_aware(t_philo *philosopher, long long milliseconds);
 bool			i_am_alive(t_philo *philosopher);
 void			exit_death(t_philo *philosopher);
 
