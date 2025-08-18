@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "philo.h"
+#include "philo_bonus.h"
 
 int	main(int argc, char **argv)
 {
@@ -127,26 +127,122 @@ void	routine(t_rules rules, int id)
 	philosopher.last_meal = time_now_ms();
 	while (1)
 	{
-		eat(philosopher);
-		philo_sleep(philosopher);
-		think(philosopher);
+		eat(&philosopher);
+		philo_sleep(&philosopher);
+		think(&philosopher);
 	}
 }
 
-void	eat(t_philo philosopher)
+void	think(t_philo *philosopher)
+{
+	long long	start;
+
+	start = philosopher->rules.start_time;
+	if (i_am_alive(philosopher))
+	{
+		printf("%lld %i is thinking\n", time_now_ms() - start, philosopher->id);
+		//sleep_millisecs(philosopher->rules.number_of_philosophers
+		//	- philosopher->id + 1);
+	}
+	else
+		exit_death(philosopher);
+}
+void	philo_sleep(t_philo *philosopher)
+{
+	long long	start;
+
+	start = philosopher->rules.start_time;
+	if (i_am_alive(philosopher))
+	{
+		printf("%lld %i is sleeping\n", time_now_ms() - start, philosopher->id);
+		sleep_millisecs(philosopher->rules.time_to_sleep);
+	}
+	else
+		exit_death(philosopher);
+}
+
+void	exit_death(t_philo *philosopher)
+{
+	printf("%lld %i died\n", time_now_ms()
+		- philosopher->rules.start_time, philosopher->id);
+	exit(1);
+}
+
+void	eat(t_philo *philosopher)
 {
 	if (i_am_alive(philosopher))
 	{
 		take_forks(philosopher);
-		philosopher.last_meal = time_now_ms();
-		printf("%lld %i is eating\n", philosopher.last_meal - philosopher.rules.start_time, philosopher.id);
-		sleep_millisecs(philosopher.rules.time_to_eat);
+		if (i_am_alive(philosopher))
+		{
+			philosopher->last_meal = time_now_ms();
+			printf("%lld %i is eating\n", philosopher->last_meal
+				- philosopher->rules.start_time, philosopher->id);
+			sleep_millisecs(philosopher->rules.time_to_eat);
+			philosopher->meals_eaten++;
+		}
 		place_forks(philosopher);
-		philosopher.meals_eaten++;
-		if (philosopher.meals_eaten
-			== philosopher.rules.number_of_times_each_philosopher_must_eat);
+		if (philosopher->meals_eaten
+			== philosopher->rules.number_of_times_each_philosopher_must_eat)
 			exit(0);
 	}
 	else
-		exit(1);
+		exit_death(philosopher);
+}
+
+void	place_forks(t_philo *philosopher)
+{
+	sem_close(philosopher->rules.forks);
+	sem_close(philosopher->rules.forks);
+}
+
+void	take_forks(t_philo *philosopher)
+{
+	int	id;
+
+	id = philosopher->id;
+	// sleep_millisecs((long long)id);
+	if (i_am_alive(philosopher) == false)
+		exit_death(philosopher);
+	sem_wait(philosopher->rules.forks);
+	if (i_am_alive(philosopher))
+		printf("%lld %i has taken a fork\n", time_now_ms()
+			- philosopher->rules.start_time, id);
+	else
+	{
+		sem_close(philosopher->rules.forks);
+		exit_death(philosopher);
+	}
+	sem_wait(philosopher->rules.forks);
+	if (i_am_alive(philosopher))
+		printf("%lld %i has taken a fork\n", time_now_ms()
+			- philosopher->rules.start_time, id);
+	else
+	{
+		sem_close(philosopher->rules.forks);
+		exit_death(philosopher);
+	}
+}
+
+bool	i_am_alive(t_philo *philosopher)
+{
+	return (time_now_ms() - philosopher->last_meal
+			<= philosopher->rules.time_to_die);
+}
+
+void	sleep_millisecs(long long milliseconds)
+{
+	long	start;
+
+	start = time_now_ms();
+	while ((time_now_ms() - start) < milliseconds)
+		usleep(500);
+}
+
+long long	time_now_ms(void)
+{
+	struct timeval	tv;
+
+	gettimeofday(&tv, NULL);
+	return (tv.tv_sec * 1000LL + tv.tv_usec / 1000LL);
 }
