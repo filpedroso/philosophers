@@ -41,11 +41,14 @@ void	one_philo(t_philo *philosopher)
 	start = philosopher->rules->start_time;
 	now = time_now_ms();
 	pthread_mutex_lock(&philosopher->right_fork->mutex);
+	philosopher->right_fork->being_used = true;
 	printf("%lld %i has taken a fork\n", now - start, philosopher->id);
-	sleep_millisecs(philosopher->rules->time_to_die);
-	is_dead(philosopher);
-	printf("%lld %i died\n", now - start, philosopher->id);
 	pthread_mutex_unlock(&philosopher->right_fork->mutex);
+	sleep_millisecs(philosopher->rules->time_to_die);
+	pthread_mutex_lock(&philosopher->rules->death_mutex);
+	philosopher->rules->someone_died = true;
+	printf("%lld %i died\n", now - start, philosopher->id);
+	pthread_mutex_unlock(&philosopher->rules->death_mutex);
 	return ;
 }
 
