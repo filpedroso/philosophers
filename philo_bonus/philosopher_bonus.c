@@ -80,8 +80,9 @@ int	simulation(t_rules rules)
 
 void	reap_processes(t_rules *rules, pid_t *pids)
 {
-	int	status;
-	int	i;
+	int			status;
+	int			i;
+	long long	now;
 
 	while (1)
 	{
@@ -89,10 +90,11 @@ void	reap_processes(t_rules *rules, pid_t *pids)
 			break ;
 		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 		{
+			now = time_now_ms();
 			i = -1;
 			while (++i < rules->number_of_philosophers)
 				kill(pids[i], SIGKILL);
-			printf("%lld %i died\n", time_now_ms() - rules->start_time,
+			printf("%lld %i died\n", now - rules->start_time,
 				WEXITSTATUS(status));
 			i = -1;
 			while (++i < rules->number_of_philosophers)
@@ -145,7 +147,11 @@ void	think(t_philo *philosopher)
 
 	start = philosopher->rules->start_time;
 	if (i_am_alive(philosopher))
+	{
 		printf("%lld %i is thinking\n", time_now_ms() - start, philosopher->id);
+		while (!is_starving(philosopher))
+			sleep_millisecs(1);
+	}
 	else
 		exit_death(philosopher);
 }
@@ -181,7 +187,7 @@ void	eat(t_philo *philosopher)
 			philosopher->last_meal = time_now_ms();
 			printf("%lld %i is eating\n", philosopher->last_meal
 				- philosopher->rules->start_time, philosopher->id);
-			sleep_and_aware(philosopher, philosopher->rules->time_to_eat);
+			sleep_millisecs((long long)philosopher->rules->time_to_eat);
 			philosopher->meals_eaten++;
 		}
 		place_forks(philosopher);
@@ -244,10 +250,31 @@ void	sleep_and_aware(t_philo *philosopher, long long milliseconds)
 	}
 }
 
+void	sleep_millisecs(long long milliseconds)
+{
+	long	start;
+
+	start = time_now_ms();
+	while ((time_now_ms() - start) < milliseconds)
+		usleep(500);
+}
+
 long long	time_now_ms(void)
 {
 	struct timeval	tv;
 
 	gettimeofday(&tv, NULL);
 	return (tv.tv_sec * 1000LL + tv.tv_usec / 1000LL);
+}
+
+bool	is_starving(t_philo *philosopher)
+{
+	int		base_time_left;
+	int		base_time_spent;
+
+	base_time_spent = philosopher->rules->time_to_eat
+		+ philosopher->rules->time_to_sleep;
+	base_time_left = philosopher->rules->time_to_die - base_time_spent;
+	return (time_now_ms() - philosopher->last_meal)
+		> (base_time_spent + base_time_left / 10);
 }

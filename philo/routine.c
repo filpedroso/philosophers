@@ -90,6 +90,6 @@ bool	think(t_philo *philosopher)
 	id = philosopher->id;
 	printf("%lld %i is thinking\n", now - start, id);
 	while (!is_starving(philosopher))
-		sleep_millisecs(5);
+		sleep_millisecs(1);
 	return (true);
 }
