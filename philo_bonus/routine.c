@@ -22,6 +22,9 @@ void	routine(t_rules *rules, int id)
 	philosopher.last_meal = time_now_ms();
 	if (rules->number_of_philosophers == 1)
 		one_philo(&philosopher);
+	if (id == rules->number_of_philosophers
+		|| id == rules->number_of_philosophers / 2)
+		sleep_millisecs(2);
 	while (1)
 	{
 		eat(&philosopher);
