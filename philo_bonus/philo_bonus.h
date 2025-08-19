@@ -66,7 +66,6 @@ bool			i_am_alive(t_philo *philosopher);
 void			exit_death(t_philo *philosopher);
 void			sleep_millisecs(long long milliseconds);
 bool			is_starving(t_philo *philosopher);
-
-
+void			one_philo(t_philo *philosopher);
 
 #endif

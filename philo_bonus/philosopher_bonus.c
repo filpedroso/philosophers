@@ -133,12 +133,24 @@ void	routine(t_rules *rules, int id)
 	philosopher.rules = rules;
 	philosopher.meals_eaten = 0;
 	philosopher.last_meal = time_now_ms();
+	if (rules->number_of_philosophers == 1)
+		one_philo(&philosopher);
 	while (1)
 	{
 		eat(&philosopher);
 		philo_sleep(&philosopher);
 		think(&philosopher);
 	}
+}
+
+void	one_philo(t_philo *philosopher)
+{
+	sem_wait(philosopher->rules->forks);
+	printf("%lld %i has taken a fork\n", time_now_ms()
+			- philosopher->rules->start_time, philosopher->id);
+	sleep_millisecs(philosopher->rules->time_to_die);
+	sem_close(philosopher->rules->forks);
+	exit_death(philosopher);
 }
 
 void	think(t_philo *philosopher)
