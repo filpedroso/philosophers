@@ -21,6 +21,7 @@ int	main(int argc, char **argv)
 		return (1);
 	if (!parse_args(argc, argv, &rules))
 		return (1);
+	sem_unlink("forks");
 	status = 0;
 	status = simulation(rules);
 	return (status);
@@ -68,14 +69,16 @@ int	simulation(t_rules rules)
 	pids = (pid_t *)malloc(sizeof(pid_t) * rules.number_of_philosophers);
 	if (!pids)
 		return (1);
+	rules.forks = sem_open("forks", O_CREAT, 0644,
+			rules.number_of_philosophers);
 	rules.start_time = time_now_ms();
-	create_processes(rules, pids);
-	reap_processes(rules, pids);
+	create_processes(&rules, pids);
+	reap_processes(&rules, pids);
 	free(pids);
 	return (0);
 }
 
-void	reap_processes(t_rules rules, pid_t *pids)
+void	reap_processes(t_rules *rules, pid_t *pids)
 {
 	int	status;
 	int	i;
@@ -87,33 +90,34 @@ void	reap_processes(t_rules rules, pid_t *pids)
 		if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
 		{
 			i = -1;
-			while (++i < rules.number_of_philosophers)
+			while (++i < rules->number_of_philosophers)
 				kill(pids[i], SIGKILL);
-			printf("%lld %i died\n", time_now_ms() - rules.start_time,
+			printf("%lld %i died\n", time_now_ms() - rules->start_time,
 				WEXITSTATUS(status));
 			i = -1;
-			while (++i < rules.number_of_philosophers)
+			while (++i < rules->number_of_philosophers)
 				waitpid(pids[i], NULL, 0);
 			break ;
 		}
 	}
+	sem_close(rules->forks);
 	sem_unlink("forks");
 }
 
-void	create_processes(t_rules rules, pid_t *pids)
+void	create_processes(t_rules *rules, pid_t *pids)
 {
 	int		i;
 	pid_t	pid;
 
-	sem_unlink("forks");
-	rules.forks = sem_open("forks", O_CREAT, 0644,
-			rules.number_of_philosophers);
 	i = -1;
-	while (++i < rules.number_of_philosophers)
+	while (++i < rules->number_of_philosophers)
 	{
 		pid = fork();
 		if (pid == 0)
-			routine(&rules, i + 1);
+		{
+			free(pids);
+			routine(rules, i + 1);
+		}
 		else
 			pids[i] = pid;
 	}
@@ -162,6 +166,7 @@ void	philo_sleep(t_philo *philosopher)
 
 void	exit_death(t_philo *philosopher)
 {
+	sem_close(philosopher->rules->forks);
 	exit(philosopher->id);
 }
 

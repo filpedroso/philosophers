@@ -21,7 +21,10 @@
 # include <stdlib.h>
 # include <string.h>
 # include <sys/time.h>
+# include <sys/stat.h>
 # include <unistd.h>
+# include <sys/wait.h>
+# include <fcntl.h>
 
 # define NO_ARG -2
 
@@ -44,8 +47,7 @@ typedef struct s_philo
 	t_rules		*rules;
 }				t_philo;
 
-void			create_processes(t_rules rules, pid_t *pids);
-
+void			create_processes(t_rules *rules, pid_t *pids);
 bool			parse_args(int argc, char **argv, t_rules *rules);
 int				atoi_positive(char *str);
 int				simulation(t_rules rules);
@@ -57,7 +59,7 @@ void			eat(t_philo *philosopher);
 long long		time_now_ms(void);
 void			place_forks(t_philo *philosopher);
 void			take_forks(t_philo *philosopher);
-void			reap_processes(t_rules rules, pid_t *pids);
+void			reap_processes(t_rules *rules, pid_t *pids);
 void			philo_sleep(t_philo *philosopher);
 void			sleep_and_aware(t_philo *philosopher, long long milliseconds);
 bool			i_am_alive(t_philo *philosopher);
