@@ -11,21 +11,17 @@
 # **************************************************************************** #
 
 # Compilation Variables
-NAME = philo
+NAME = philo_bonus
 CC = cc
 CFLAGS = -Wextra -Wall -Werror -g
 
 # Source files
 FILES =		general_utils.c		\
-			monitor.c			\
+			main.c				\
 			parse_args.c		\
-			philosophers.c		\
-			prep_table.c		\
 			routine.c			\
 			routine_utils.c		\
-			start_simulation.c	\
-			use_forks.c
-
+			simulation.c
 
 # Object files
 OBJ = $(FILES:.c=.o)
@@ -59,7 +55,7 @@ NC		= \033[0m
 $(NAME): $(OBJ)
 	$(AT) $(CC) $(CFLAGS) -o $@ $^
 	@printf "\n"
-	@printf "$(MAGENTA)philosophers compiled.\n"
+	@printf "$(MAGENTA)philosophers bonus compiled.\n"
 
 
 all: $(NAME)

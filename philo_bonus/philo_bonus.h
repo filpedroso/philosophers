@@ -63,7 +63,7 @@ void			reap_processes(t_rules *rules, pid_t *pids);
 void			philo_sleep(t_philo *philosopher);
 void			sleep_and_aware(t_philo *philosopher, long long milliseconds);
 bool			i_am_alive(t_philo *philosopher);
-void			exit_death(t_philo *philosopher);
+void			exit_death(t_philo *philosopher, int status);
 void			sleep_millisecs(long long milliseconds);
 bool			is_starving(t_philo *philosopher);
 void			one_philo(t_philo *philosopher);
