@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/16 14:33:55 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/16 14:33:55 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 22:25:39 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,14 @@
 
 void take_forks(t_philo *philosopher)
 {
-    pthread_mutex_t first;
-    pthread_mutex_t second;
+    pthread_mutex_t *first;
+    pthread_mutex_t *second;
 
 	get_mutex_order(&first, &second, philosopher);
     while (1)
     {
-        pthread_mutex_lock(&first);
-        pthread_mutex_lock(&second);
+        pthread_mutex_lock(first);
+        pthread_mutex_lock(second);
         if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
         {
 			philosopher->left_fork->being_used = true;
@@ -31,28 +31,28 @@ void take_forks(t_philo *philosopher)
 				atomic_print("has taken a fork", philosopher);
 				atomic_print("has taken a fork", philosopher);
             }
-			pthread_mutex_unlock(&second);
-			pthread_mutex_unlock(&first);
+			pthread_mutex_unlock(second);
+			pthread_mutex_unlock(first);
 			return;
         }
-        pthread_mutex_unlock(&second);
-        pthread_mutex_unlock(&first);
+        pthread_mutex_unlock(second);
+        pthread_mutex_unlock(first);
         usleep(100);
     }
 }
 
-void	get_mutex_order(pthread_mutex_t *first, pthread_mutex_t *second,
+void	get_mutex_order(pthread_mutex_t **first, pthread_mutex_t **second,
 	t_philo *philosopher)
 {
     if (philosopher->left_fork->id < philosopher->right_fork->id)
     {
-        *first = philosopher->left_fork->mutex;
-        *second = philosopher->right_fork->mutex;
+        *first = &philosopher->left_fork->mutex;
+        *second = &philosopher->right_fork->mutex;
     }
     else
     {
-        *first = philosopher->right_fork->mutex;
-        *second = philosopher->left_fork->mutex;
+        *first = &philosopher->right_fork->mutex;
+        *second = &philosopher->left_fork->mutex;
     }
 }
 
