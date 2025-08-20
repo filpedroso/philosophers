@@ -20,6 +20,7 @@
 # include <string.h>
 # include <sys/time.h>
 # include <unistd.h>
+# include <limits.h>
 
 # define NO_ARG -2
 
@@ -34,10 +35,11 @@ typedef struct s_rules
 	int					number_of_times_each_philosopher_must_eat;
 	bool				someone_died;
 	pthread_mutex_t		death_mutex;
+	pthread_mutex_t		print_mutex;
+	pthread_mutex_t		simul_mutex;
 	pthread_t			monitor_thread;
 	long long			start_time;
 	bool				simulation_started;
-	pthread_mutex_t		simul_mutex;
 }						t_rules;
 
 typedef struct s_philo
@@ -88,5 +90,7 @@ void					sleep_millisecs(long long usec);
 bool					simulation_has_started(t_rules *rules);
 bool					i_am_alive(t_philo *philosopher);
 bool					is_starving(t_philo *philosopher);
-
+void	atomic_print(char *msg, t_philo *philosopher);
+void	get_mutex_order(pthread_mutex_t *first, pthread_mutex_t *second,
+	t_philo *philosopher);
 #endif

@@ -14,44 +14,45 @@
 
 void take_forks(t_philo *philosopher)
 {
-    long long start = philosopher->rules->start_time;
-    pthread_mutex_t *first;
-    pthread_mutex_t *second;
+    pthread_mutex_t first;
+    pthread_mutex_t second;
 
+	get_mutex_order(&first, &second, philosopher);
+    while (1)
+    {
+        pthread_mutex_lock(&first);
+        pthread_mutex_lock(&second);
+        if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
+        {
+            if (!should_stop(philosopher))
+            {
+				philosopher->left_fork->being_used = true;
+				philosopher->right_fork->being_used = true;
+				atomic_print("has taken a fork", philosopher);
+				atomic_print("has taken a fork", philosopher);
+            }
+			pthread_mutex_unlock(&first);
+			pthread_mutex_unlock(&second);
+			return;
+        }
+        pthread_mutex_unlock(&first);
+        pthread_mutex_unlock(&second);
+        usleep(100);
+    }
+}
+
+void	get_mutex_order(pthread_mutex_t *first, pthread_mutex_t *second,
+	t_philo *philosopher)
+{
     if (philosopher->left_fork->id < philosopher->right_fork->id)
     {
-        first = &philosopher->left_fork->mutex;
-        second = &philosopher->right_fork->mutex;
+        *first = philosopher->left_fork->mutex;
+        *second = philosopher->right_fork->mutex;
     }
     else
     {
-        first = &philosopher->right_fork->mutex;
-        second = &philosopher->left_fork->mutex;
-    }
-
-    while (1)
-    {
-        pthread_mutex_lock(first);
-        pthread_mutex_lock(second);
-        if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
-        {
-            if (should_stop(philosopher))
-            {
-                pthread_mutex_unlock(first);
-                pthread_mutex_unlock(second);
-                return;
-            }
-            philosopher->left_fork->being_used = true;
-            philosopher->right_fork->being_used = true;
-            printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
-            printf("%lld %i has taken a fork\n", time_now_ms() - start, philosopher->id);
-            pthread_mutex_unlock(first);
-            pthread_mutex_unlock(second);
-            break;
-        }
-        pthread_mutex_unlock(first);
-        pthread_mutex_unlock(second);
-        usleep(100);
+        *first = philosopher->right_fork->mutex;
+        *second = philosopher->left_fork->mutex;
     }
 }
 
