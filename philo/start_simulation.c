@@ -19,8 +19,6 @@ int	start_simulation(t_philo *philos)
 	n_philos = philos->rules->number_of_philosophers;
 	if (!create_threads(philos, n_philos))
 		return (1);
-	if (!create_monitor_detached(philos))
-		return (1);
 	if (pthread_mutex_init(&philos->rules->simul_mutex, NULL) != 0)
 		return (false);
 	if (pthread_mutex_lock(&philos->rules->simul_mutex) != 0)
@@ -31,22 +29,6 @@ int	start_simulation(t_philo *philos)
 	if (!join_philos(philos, n_philos))
 		return (1);
 	return (0);
-}
-
-bool	create_monitor_detached(t_philo *philos)
-{
-	if (pthread_create(&philos->rules->monitor_thread, NULL, watchdog,
-			(void *)philos) != 0)
-	{
-		ft_putstr_error("pthread monitor create error\n");
-		return (false);
-	}
-	if (pthread_detach(philos->rules->monitor_thread) != 0)
-	{
-		ft_putstr_error("pthread monitor detach error\n");
-		return (false);
-	}
-	return (true);
 }
 
 bool	create_threads(t_philo *philos, int n_philos)
@@ -63,6 +45,12 @@ bool	create_threads(t_philo *philos, int n_philos)
 		}
 		head = head->right_fork->right_philo;
 	}
+	if (pthread_create(&philos->rules->monitor_thread, NULL, watchdog,
+			(void *)philos) != 0)
+	{
+		ft_putstr_error("pthread monitor create error\n");
+		return (false);
+	}
 	return (true);
 }
 
@@ -77,5 +65,7 @@ bool	join_philos(t_philo *philos, int n_philos)
 			return (ft_putstr_error("join error\n"));
 		head = head->right_fork->right_philo;
 	}
+	if (pthread_join(head->rules->monitor_thread, NULL) != 0)
+			return (ft_putstr_error("join error\n"));
 	return (true);
 }
