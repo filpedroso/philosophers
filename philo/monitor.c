@@ -30,8 +30,7 @@ void	*watchdog(void *philos)
 		{
 			if (is_dead(philosopher))
 			{
-				printf("%lld %i died\n", time_now_ms()
-					- philosopher->rules->start_time, philosopher->id);
+				atomic_print("died", philosopher);
 				return (NULL);
 			}
 			philosopher = philosopher->right_fork->right_philo;

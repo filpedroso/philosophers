@@ -18,11 +18,16 @@ int	main(int argc, char **argv)
 	t_philo	*philos;
 	int		status;
 
-	if ((argc != 5) && (argc != 6))
+	if ((argc != 5 && argc != 6) || !parse_args(argc, argv, &rules))
+	{
+		printf("Error: invalid args\n");
 		return (1);
+	}
 	if (!parse_args(argc, argv, &rules))
 		return (1);
 	if (pthread_mutex_init(&rules.death_mutex, NULL) != 0)
+		return (1);
+	if (pthread_mutex_init(&rules.print_mutex, NULL) != 0)
 		return (1);
 	philos = prep_table(rules.number_of_philosophers, &rules);
 	if (!philos)
@@ -50,6 +55,15 @@ void	one_philo(t_philo *philosopher)
 	printf("%lld %i died\n", now - start, philosopher->id);
 	pthread_mutex_unlock(&philosopher->rules->death_mutex);
 	return ;
+}
+
+void	atomic_print(char *msg, t_philo *philosopher)
+{
+	pthread_mutex_lock(&philosopher->rules->print_mutex);
+	printf("%lld %i %s\n",
+		(time_now_ms() - philosopher->rules->start_time),
+		philosopher->id, msg);
+	pthread_mutex_unlock(&philosopher->rules->print_mutex);
 }
 
 /* void	debug_print_myself(t_philo *philos)

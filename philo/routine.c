@@ -48,8 +48,7 @@ bool	eat(t_philo *philosopher)
 		pthread_mutex_unlock(&philosopher->eat_mutex);
 		if (should_stop(philosopher))
 			return (false);
-		printf("%lld %i is eating\n", philosopher->last_meal
-			- philosopher->rules->start_time, philosopher->id);
+		atomic_print("is eating", philosopher);
 		sleep_millisecs(philosopher->rules->time_to_eat);
 		place_forks(philosopher);
 		pthread_mutex_lock(&philosopher->eat_mutex);
@@ -63,32 +62,22 @@ bool	eat(t_philo *philosopher)
 
 bool	philo_sleep(t_philo *philosopher)
 {
-	long long	start;
-
 	if (!philosopher)
 		return (false);
 	if (should_stop(philosopher))
 		return (false);
-	start = philosopher->rules->start_time;
-	printf("%lld %i is sleeping\n", time_now_ms() - start, philosopher->id);
+	atomic_print("is sleeping", philosopher);
 	sleep_millisecs(philosopher->rules->time_to_sleep);
 	return (true);
 }
 
 bool	think(t_philo *philosopher)
 {
-	long long	now;
-	long long	start;
-	int			id;
-
 	if (!philosopher)
 		return (false);
 	if (should_stop(philosopher))
 		return (false);
-	start = philosopher->rules->start_time;
-	now = time_now_ms();
-	id = philosopher->id;
-	printf("%lld %i is thinking\n", now - start, id);
+	atomic_print("is thinking", philosopher);
 	while (!is_starving(philosopher))
 		sleep_millisecs(1);
 	return (true);

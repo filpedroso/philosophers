@@ -41,7 +41,7 @@ bool	is_starving(t_philo *philosopher)
 	base_time_left = philosopher->rules->time_to_die - base_time_spent;
 	pthread_mutex_lock(&philosopher->eat_mutex);
 	is_starving = (time_now_ms() - philosopher->last_meal) > (base_time_spent
-			+ base_time_left / 2);
+			+ base_time_left / 10);
 	pthread_mutex_unlock(&philosopher->eat_mutex);
 	return (is_starving);
 }
