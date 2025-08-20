@@ -1,18 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philo.h                                            :+:      :+:    :+:   */
+/*   philo_bonus.h                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/30 13:59:49 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/07/30 13:59:49 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:53:27 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef PHILO_H
-# define PHILO_H
+#ifndef PHILO_BONUS_H
+# define PHILO_BONUS_H
 
+# include <fcntl.h>
+# include <limits.h>
 # include <pthread.h>
 # include <semaphore.h>
 # include <signal.h>
@@ -20,12 +22,10 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <string.h>
-# include <sys/time.h>
 # include <sys/stat.h>
-# include <unistd.h>
+# include <sys/time.h>
 # include <sys/wait.h>
-# include <fcntl.h>
-# include <limits.h>
+# include <unistd.h>
 
 # define NO_ARG -2
 
@@ -53,7 +53,6 @@ void			create_processes(t_rules *rules, pid_t *pids);
 bool			parse_args(int argc, char **argv, t_rules *rules);
 int				atoi_positive(char *str);
 int				simulation(t_rules rules);
-int				ft_putstr_error(char *s);
 void			routine(t_rules *rules, int id);
 void			think(t_philo *philosopher);
 void			one_philo(t_philo *philosopher);
@@ -70,5 +69,6 @@ void			sleep_millisecs(long long milliseconds);
 bool			is_starving(t_philo *philosopher);
 void			one_philo(t_philo *philosopher);
 void			atomic_print(char *msg, t_philo *philosopher);
+void			unlink_and_close_semaphores(t_rules *rules);
 
 #endif

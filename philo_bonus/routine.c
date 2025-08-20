@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/19 15:09:27 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/19 15:09:27 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:47:53 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,9 +22,6 @@ void	routine(t_rules *rules, int id)
 	philosopher.last_meal = time_now_ms();
 	if (rules->number_of_philosophers == 1)
 		one_philo(&philosopher);
-	//if (id == rules->number_of_philosophers
-	//	|| id == rules->number_of_philosophers / 2)
-	//	sleep_millisecs(2);
 	while (1)
 	{
 		eat(&philosopher);
@@ -55,7 +52,8 @@ void	eat(t_philo *philosopher)
 			philosopher->meals_eaten++;
 		}
 		place_forks(philosopher);
-		if (philosopher->meals_eaten == philosopher->rules->number_of_times_each_philosopher_must_eat)
+		if (philosopher->meals_eaten
+			== philosopher->rules->number_of_times_each_philosopher_must_eat)
 			exit_death(philosopher, 0);
 	}
 	else
@@ -78,8 +76,8 @@ void	think(t_philo *philosopher)
 	if (i_am_alive(philosopher))
 	{
 		atomic_print("is thinking", philosopher);
-		//while (!is_starving(philosopher))
-		//	sleep_millisecs(1);
+		while (!is_starving(philosopher))
+			sleep_millisecs(1);
 	}
 	else
 		exit_death(philosopher, philosopher->id);

@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/19 15:12:01 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/20 23:04:33 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:54:07 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,6 +67,6 @@ bool	is_starving(t_philo *philosopher)
 	base_time_spent = philosopher->rules->time_to_eat
 		+ philosopher->rules->time_to_sleep;
 	base_time_left = philosopher->rules->time_to_die - base_time_spent;
-	return (time_now_ms() - philosopher->last_meal) > (base_time_spent
-		+ base_time_left / 10);
+	return ((time_now_ms() - philosopher->last_meal) > (base_time_spent
+			+ base_time_left / 10));
 }

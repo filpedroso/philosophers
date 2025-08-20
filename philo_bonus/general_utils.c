@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/19 15:14:54 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/19 15:14:54 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:43:32 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 void	exit_death(t_philo *philosopher, int status)
 {
 	sem_close(philosopher->rules->forks);
+	sem_close(philosopher->rules->print_semaphore);
 	exit(status);
 }
 

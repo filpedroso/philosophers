@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philosopher_bonus.c                                :+:      :+:    :+:   */
+/*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/17 16:43:40 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/17 16:43:40 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:25:49 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,3 +37,8 @@ void	atomic_print(char *msg, t_philo *philosopher)
 	sem_post(philosopher->rules->print_semaphore);
 }
 
+/* Test: [5 800 200 200] | no one should die
+
+Test: [5 600 150 150] | no one should die
+
+ */

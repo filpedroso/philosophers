@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/19 15:06:35 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/19 15:06:35 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:46:37 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,8 @@ bool	parse_args(int argc, char **argv, t_rules *rules)
 	rules->time_to_eat = atoi_positive(argv[3]);
 	rules->time_to_sleep = atoi_positive(argv[4]);
 	if (argc == 6)
-		rules->number_of_times_each_philosopher_must_eat = atoi_positive(argv[5]);
+		rules->number_of_times_each_philosopher_must_eat
+			= atoi_positive(argv[5]);
 	else
 		rules->number_of_times_each_philosopher_must_eat = NO_ARG;
 	if (rules->number_of_philosophers == -1 || rules->time_to_die == -1
@@ -51,5 +52,5 @@ int	atoi_positive(char *str)
 	}
 	if (num > INT_MAX || num < INT_MIN)
 		return (-1);
-	return (int)(num);
+	return ((int)num);
 }

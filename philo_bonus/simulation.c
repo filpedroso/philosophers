@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/19 15:07:25 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/19 15:07:25 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:51:10 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,7 +72,13 @@ void	reap_processes(t_rules *rules, pid_t *pids)
 			break ;
 		}
 	}
+	unlink_and_close_semaphores(rules);
+}
+
+void	unlink_and_close_semaphores(t_rules *rules)
+{
 	sem_close(rules->forks);
 	sem_close(rules->print_semaphore);
 	sem_unlink("forks");
+	sem_unlink("printer");
 }
