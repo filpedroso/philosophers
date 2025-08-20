@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/16 14:24:46 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/16 14:24:46 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 22:51:20 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,6 @@ bool	join_philos(t_philo *philos, int n_philos)
 		head = head->right_fork->right_philo;
 	}
 	if (pthread_join(head->rules->monitor_thread, NULL) != 0)
-			return (ft_putstr_error("join error\n"));
+		return (ft_putstr_error("join error\n"));
 	return (true);
 }

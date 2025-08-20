@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/30 15:45:58 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/07/30 16:35:50 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 22:49:06 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,8 +58,7 @@ void	one_philo(t_philo *philosopher)
 void	atomic_print(char *msg, t_philo *philosopher)
 {
 	pthread_mutex_lock(&philosopher->rules->print_mutex);
-	printf("%lld %i %s\n",
-		(time_now_ms() - philosopher->rules->start_time),
+	printf("%lld %i %s\n", (time_now_ms() - philosopher->rules->start_time),
 		philosopher->id, msg);
 	pthread_mutex_unlock(&philosopher->rules->print_mutex);
 }

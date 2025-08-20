@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/19 15:12:01 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/19 15:12:01 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 23:04:33 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@ void	take_forks(t_philo *philosopher)
 	if (i_am_alive(philosopher) == false)
 		exit_death(philosopher, philosopher->id);
 	sem_wait(philosopher->rules->forks);
+	sem_wait(philosopher->rules->forks);
 	if (i_am_alive(philosopher))
 		atomic_print("has taken a fork", philosopher);
 	else
@@ -24,7 +25,6 @@ void	take_forks(t_philo *philosopher)
 		sem_post(philosopher->rules->forks);
 		exit_death(philosopher, philosopher->id);
 	}
-	sem_wait(philosopher->rules->forks);
 	if (i_am_alive(philosopher))
 		atomic_print("has taken a fork", philosopher);
 	else

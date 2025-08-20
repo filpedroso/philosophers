@@ -6,13 +6,14 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/30 13:59:49 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/20 22:25:14 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 22:48:20 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PHILO_H
 # define PHILO_H
 
+# include <limits.h>
 # include <pthread.h>
 # include <stdbool.h>
 # include <stdio.h>
@@ -20,7 +21,6 @@
 # include <string.h>
 # include <sys/time.h>
 # include <unistd.h>
-# include <limits.h>
 
 # define NO_ARG -2
 
@@ -90,7 +90,7 @@ void					sleep_millisecs(long long usec);
 bool					simulation_has_started(t_rules *rules);
 bool					i_am_alive(t_philo *philosopher);
 bool					is_starving(t_philo *philosopher);
-void	atomic_print(char *msg, t_philo *philosopher);
-void	get_mutex_order(pthread_mutex_t **first, pthread_mutex_t **second,
-	t_philo *philosopher);
+void					atomic_print(char *msg, t_philo *philosopher);
+void					get_mutex_order(pthread_mutex_t **first,
+							pthread_mutex_t **second, t_philo *philosopher);
 #endif

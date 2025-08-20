@@ -6,7 +6,7 @@
 /*   By: fpedroso <fpedroso@student.42lisboa.com    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/08/16 14:20:27 by fpedroso          #+#    #+#             */
-/*   Updated: 2025/08/16 14:20:27 by fpedroso         ###   ########.fr       */
+/*   Updated: 2025/08/20 22:52:07 by fpedroso         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,5 +52,5 @@ int	atoi_positive(char *str)
 	}
 	if (num > INT_MAX || num < INT_MIN)
 		return (-1);
-	return (int)(num);
+	return ((int)num);
 }
