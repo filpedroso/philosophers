@@ -24,19 +24,19 @@ void take_forks(t_philo *philosopher)
         pthread_mutex_lock(&second);
         if (!philosopher->left_fork->being_used && !philosopher->right_fork->being_used)
         {
+			philosopher->left_fork->being_used = true;
+			philosopher->right_fork->being_used = true;
             if (!should_stop(philosopher))
             {
-				philosopher->left_fork->being_used = true;
-				philosopher->right_fork->being_used = true;
 				atomic_print("has taken a fork", philosopher);
 				atomic_print("has taken a fork", philosopher);
             }
-			pthread_mutex_unlock(&first);
 			pthread_mutex_unlock(&second);
+			pthread_mutex_unlock(&first);
 			return;
         }
-        pthread_mutex_unlock(&first);
         pthread_mutex_unlock(&second);
+        pthread_mutex_unlock(&first);
         usleep(100);
     }
 }

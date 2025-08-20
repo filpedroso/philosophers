@@ -43,6 +43,11 @@ bool	eat(t_philo *philosopher)
 	if (i_am_alive(philosopher) && !should_stop(philosopher))
 	{
 		take_forks(philosopher);
+		if (should_stop(philosopher))
+		{
+			place_forks(philosopher);
+			return (false);
+		}
 		pthread_mutex_lock(&philosopher->eat_mutex);
 		philosopher->last_meal = time_now_ms();
 		pthread_mutex_unlock(&philosopher->eat_mutex);
@@ -79,6 +84,10 @@ bool	think(t_philo *philosopher)
 		return (false);
 	atomic_print("is thinking", philosopher);
 	while (!is_starving(philosopher))
+	{
+		if (should_stop(philosopher))
+			return (false);
 		sleep_millisecs(1);
+	}
 	return (true);
 }

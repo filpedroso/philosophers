@@ -30,6 +30,7 @@ void	*watchdog(void *philos)
 		{
 			if (is_dead(philosopher))
 			{
+				sleep_millisecs(3);
 				atomic_print("died", philosopher);
 				return (NULL);
 			}
@@ -50,12 +51,9 @@ bool	is_dead(t_philo *philosopher)
 	if ((time_now_ms()
 			- last_meal) > (long long)philosopher->rules->time_to_die)
 	{
-		if (philosopher->rules->someone_died == false)
-		{
-			pthread_mutex_lock(&philosopher->rules->death_mutex);
-			philosopher->rules->someone_died = true;
-			pthread_mutex_unlock(&philosopher->rules->death_mutex);
-		}
+		pthread_mutex_lock(&philosopher->rules->death_mutex);
+		philosopher->rules->someone_died = true;
+		pthread_mutex_unlock(&philosopher->rules->death_mutex);
 		return (true);
 	}
 	return (false);
