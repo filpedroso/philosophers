@@ -21,6 +21,7 @@ int	simulation(t_rules rules)
 		return (1);
 	rules.forks = sem_open("forks", O_CREAT, 0644,
 			rules.number_of_philosophers);
+	rules.print_semaphore = sem_open("printer", O_CREAT, 0644, 1);
 	rules.start_time = time_now_ms();
 	create_processes(&rules, pids);
 	reap_processes(&rules, pids);
@@ -72,5 +73,6 @@ void	reap_processes(t_rules *rules, pid_t *pids)
 		}
 	}
 	sem_close(rules->forks);
+	sem_close(rules->print_semaphore);
 	sem_unlink("forks");
 }

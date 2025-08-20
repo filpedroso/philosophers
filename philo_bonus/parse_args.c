@@ -32,17 +32,24 @@ bool	parse_args(int argc, char **argv, t_rules *rules)
 
 int	atoi_positive(char *str)
 {
-	int	num;
+	long long	num;
+	int			counter;
 
 	if (!str || !*str)
 		return (-1);
 	num = 0;
+	counter = 0;
 	while (*str)
 	{
 		if (*str < '0' || *str > '9')
 			return (-1);
 		num = num * 10 + (*str - '0');
 		str++;
+		counter++;
+		if (counter > 12)
+			return (-1);
 	}
-	return (num);
+	if (num > INT_MAX || num < INT_MIN)
+		return (-1);
+	return (int)(num);
 }

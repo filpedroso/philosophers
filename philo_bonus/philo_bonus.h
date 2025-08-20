@@ -25,6 +25,7 @@
 # include <unistd.h>
 # include <sys/wait.h>
 # include <fcntl.h>
+# include <limits.h>
 
 # define NO_ARG -2
 
@@ -37,6 +38,7 @@ typedef struct s_rules
 	int			number_of_times_each_philosopher_must_eat;
 	long long	start_time;
 	sem_t		*forks;
+	sem_t		*print_semaphore;
 }				t_rules;
 
 typedef struct s_philo
@@ -67,5 +69,6 @@ void			exit_death(t_philo *philosopher, int status);
 void			sleep_millisecs(long long milliseconds);
 bool			is_starving(t_philo *philosopher);
 void			one_philo(t_philo *philosopher);
+void			atomic_print(char *msg, t_philo *philosopher);
 
 #endif

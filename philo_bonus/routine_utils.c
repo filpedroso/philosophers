@@ -14,15 +14,11 @@
 
 void	take_forks(t_philo *philosopher)
 {
-	int	id;
-
-	id = philosopher->id;
 	if (i_am_alive(philosopher) == false)
 		exit_death(philosopher, philosopher->id);
 	sem_wait(philosopher->rules->forks);
 	if (i_am_alive(philosopher))
-		printf("%lld %i has taken a fork\n", time_now_ms()
-			- philosopher->rules->start_time, id);
+		atomic_print("has taken a fork", philosopher);
 	else
 	{
 		sem_post(philosopher->rules->forks);
@@ -30,8 +26,7 @@ void	take_forks(t_philo *philosopher)
 	}
 	sem_wait(philosopher->rules->forks);
 	if (i_am_alive(philosopher))
-		printf("%lld %i has taken a fork\n", time_now_ms()
-			- philosopher->rules->start_time, id);
+		atomic_print("has taken a fork", philosopher);
 	else
 	{
 		sem_post(philosopher->rules->forks);

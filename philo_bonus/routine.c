@@ -22,9 +22,9 @@ void	routine(t_rules *rules, int id)
 	philosopher.last_meal = time_now_ms();
 	if (rules->number_of_philosophers == 1)
 		one_philo(&philosopher);
-	if (id == rules->number_of_philosophers
-		|| id == rules->number_of_philosophers / 2)
-		sleep_millisecs(2);
+	//if (id == rules->number_of_philosophers
+	//	|| id == rules->number_of_philosophers / 2)
+	//	sleep_millisecs(2);
 	while (1)
 	{
 		eat(&philosopher);
@@ -36,8 +36,7 @@ void	routine(t_rules *rules, int id)
 void	one_philo(t_philo *philosopher)
 {
 	sem_wait(philosopher->rules->forks);
-	printf("%lld %i has taken a fork\n", time_now_ms()
-		- philosopher->rules->start_time, philosopher->id);
+	atomic_print("has taken a fork", philosopher);
 	sleep_millisecs(philosopher->rules->time_to_die);
 	sem_close(philosopher->rules->forks);
 	exit_death(philosopher, philosopher->id);
@@ -51,8 +50,7 @@ void	eat(t_philo *philosopher)
 		if (i_am_alive(philosopher))
 		{
 			philosopher->last_meal = time_now_ms();
-			printf("%lld %i is eating\n", philosopher->last_meal
-				- philosopher->rules->start_time, philosopher->id);
+			atomic_print("is eating", philosopher);
 			sleep_millisecs((long long)philosopher->rules->time_to_eat);
 			philosopher->meals_eaten++;
 		}
@@ -66,12 +64,9 @@ void	eat(t_philo *philosopher)
 
 void	philo_sleep(t_philo *philosopher)
 {
-	long long	start;
-
-	start = philosopher->rules->start_time;
 	if (i_am_alive(philosopher))
 	{
-		printf("%lld %i is sleeping\n", time_now_ms() - start, philosopher->id);
+		atomic_print("is sleeping", philosopher);
 		sleep_and_aware(philosopher, philosopher->rules->time_to_sleep);
 	}
 	else
@@ -80,14 +75,11 @@ void	philo_sleep(t_philo *philosopher)
 
 void	think(t_philo *philosopher)
 {
-	long long	start;
-
-	start = philosopher->rules->start_time;
 	if (i_am_alive(philosopher))
 	{
-		printf("%lld %i is thinking\n", time_now_ms() - start, philosopher->id);
-		while (!is_starving(philosopher))
-			sleep_millisecs(1);
+		atomic_print("is thinking", philosopher);
+		//while (!is_starving(philosopher))
+		//	sleep_millisecs(1);
 	}
 	else
 		exit_death(philosopher, philosopher->id);

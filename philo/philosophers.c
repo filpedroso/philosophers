@@ -20,11 +20,9 @@ int	main(int argc, char **argv)
 
 	if ((argc != 5 && argc != 6) || !parse_args(argc, argv, &rules))
 	{
-		printf("Error: invalid args\n");
+		printf("Invalid args\n");
 		return (1);
 	}
-	if (!parse_args(argc, argv, &rules))
-		return (1);
 	if (pthread_mutex_init(&rules.death_mutex, NULL) != 0)
 		return (1);
 	if (pthread_mutex_init(&rules.print_mutex, NULL) != 0)
