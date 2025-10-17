@@ -1,4 +1,4 @@
-# Philosophers 🧠🍝
+# Philosophers
 
 ## Overview
 
